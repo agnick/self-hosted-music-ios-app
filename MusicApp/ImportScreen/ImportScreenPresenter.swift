@@ -10,16 +10,14 @@ import UIKit
 final class ImportScreenPresenter: ImportScreenPresentationLogic {
     weak var view: ImportScreenViewController?
     
-    func presentAudioFiles(files: [ImportScreenModel.AudioFile]) {
-        let fileNames = files.map { $0.name }
-        print("Fetched audio files: \(fileNames)")
-    }
-    
-    func presentError(error: any Error) {
+    // MARK: - Present methods
+    func presentError(_ error: any Error) {
         print("Error: \(error.localizedDescription)")
+        // Display error
     }
     
-    func routeTo() {
-        view?.navigationController?.pushViewController(UIViewController(), animated: true)
+    // MARK: - Routing methods
+    func routeToAudioFilesOverviewScreen(service: CloudServiceType) {
+        view?.navigationController?.pushViewController(AudioFilesOverviewScreenAssembly.build(service: service), animated: true)
     }
 }

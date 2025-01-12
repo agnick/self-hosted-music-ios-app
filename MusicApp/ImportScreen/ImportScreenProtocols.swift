@@ -6,23 +6,13 @@
 //
 
 protocol ImportScreenBusinessLogic {
-    func handleCloudServiceSelection(service: ImportScreenModel.CloudServiceType)
+    func handleCloudServiceSelection(service: CloudServiceType)
     func handleLocalFilesSelection()
-}
-
-protocol ImportScreenDataStore {
-    var sections: [(String, [(String, String)])] { get }
-    var audioFiles: [ImportScreenModel.AudioFile] { get set }
-}
-
-protocol ImportScreenWorkerLogic {
-    func authorizeAndFetchFiles(for service: ImportScreenModel.CloudServiceType, completion: @escaping (Result<[ImportScreenModel.AudioFile], Error>) -> Void)
-    func fetchLocalFiles(completion: @escaping (Result<[ImportScreenModel.AudioFile], Error>) -> Void)
+    func checkAuthorizationForAllServices()
 }
 
 protocol ImportScreenPresentationLogic {
-    func presentAudioFiles(files: [ImportScreenModel.AudioFile])
-    func presentError(error: Error)
+    func presentError(_ error: Error)
     
-    func routeTo()
+    func routeToAudioFilesOverviewScreen(service: CloudServiceType)
 }

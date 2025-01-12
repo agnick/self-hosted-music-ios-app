@@ -5,51 +5,56 @@
 //  Created by Никита Агафонов on 28.12.2024.
 //
 
-final class ImportScreenInteractor: ImportScreenBusinessLogic, ImportScreenDataStore {
+import Foundation
+
+final class ImportScreenInteractor: ImportScreenBusinessLogic {
+    // MARK: - Variables
     private let presenter: ImportScreenPresentationLogic
-    private let worker: ImportScreenWorkerLogic
+    private let cloudAuthService: CloudAuthService
     
-    var sections = [
-        ("Облачные хранилища", [
-            ("Google drive", "ic-google-drive"),
-            ("Yandex cloud", "ic-yandex-cloud"),
-            ("Dropbox", "ic-dropbox"),
-            ("One Drive", "ic-one-drive")
-        ]),
-        ("Другие источники", [
-            ("Локальные файлы", "ic-local-files")
-        ])
-    ]
-    
-    var audioFiles: [ImportScreenModel.AudioFile] = [] {
-        didSet {
-            presenter.presentAudioFiles(files: audioFiles)
-        }
-    }
-    
-    init (presenter: ImportScreenPresentationLogic, worker: ImportScreenWorkerLogic) {
+    // MARK: - Lifecycle
+    init (presenter: ImportScreenPresentationLogic, cloudAuthService: CloudAuthService) {
         self.presenter = presenter
-        self.worker = worker
+        self.cloudAuthService = cloudAuthService
     }
     
-    func handleCloudServiceSelection(service: ImportScreenModel.CloudServiceType) {
-        worker.authorizeAndFetchFiles(for: service) { result in
-            switch result {
-            case .success(let files):
-                self.audioFiles = files
-            case .failure(let error):
-                self.presenter.presentError(error: error)
+    // MARK: - Cloud Service Handling
+    func handleCloudServiceSelection(service: CloudServiceType) {
+        if cloudAuthService.isAuthorized(for: service) {
+            presenter.routeToAudioFilesOverviewScreen(service: service)
+        } else {
+            cloudAuthService.authorize(for: service) { [weak self] result in
+                switch result {
+                case .success:
+                    self?.presenter.routeToAudioFilesOverviewScreen(service: service)
+                case .failure(let error):
+                    self?.presenter.presentError(error)
+                }
             }
         }
     }
     
+    func checkAuthorizationForAllServices() {
+        for service in CloudServiceType.allCases {
+            if !cloudAuthService.isAuthorized(for: service) {
+                reauthorizeService(service: service)
+            }
+        }
+    }
+    
+    // MARK: - Local File Handling
     func handleLocalFilesSelection() {
-        worker.fetchLocalFiles { result in
+        
+    }
+    
+    // MARK: - Private methods
+    private func reauthorizeService(service: CloudServiceType) {
+        cloudAuthService.reauthorize(for: service) { result in
             switch result {
-            case .success(let files):
-                self.audioFiles = files
+            case .success:
+                print("\(service) reauthorized successfully.")
             case .failure(let error):
-                self.presenter.presentError(error: error)
+                print("Failed to reauthorize \(service): \(error.localizedDescription)")
             }
         }
     }

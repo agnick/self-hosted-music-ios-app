@@ -1,0 +1,77 @@
+//
+//  .gitignore.swift
+//  MusicApp
+//
+//  Created by Никита Агафонов on 13.01.2025.
+//
+
+# User-specific files
+*.xcuserstate
+*.xcworkspace
+*.xcuserdata
+
+# Build products
+*.app
+*.app.dSYM
+*.framework
+*.dSYM
+*.ipa
+*.xcarchive
+
+# Logs
+*.log
+*.tmp
+*.swp
+*.lock
+
+# Derived Data
+DerivedData/
+.idea/
+
+# Xcode project files
+build/
+*.mode1v3
+*.pbxuser
+*.perspectivev3
+
+# Temporary files
+*.swp
+*.DS_Store
+*.tmp
+
+# Bundler
+/.bundle/
+/.gemfile.lock
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Swift Package Manager
+/.build/
+/Package.resolved
+
+# Carthage
+Carthage/Build/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+
+# Xcode's indexing and shared schemes
+*.xccheckout
+*.moved-aside
+*.xccrashpoint
+*.xccrashlog
+
+# Environment sensitive
+*.env
+.env.*
+
+# Keys or secrets
+*.key
+*.crt
+*.pem
+*.p12
+client_*.apps.googleusercontent.com

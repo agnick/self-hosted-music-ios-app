@@ -19,5 +19,18 @@
 			</array>
 		</dict>
 	</dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.105797830130-sdde13lpju8564qb49gc5jldd3as70hh</string>
+			</array>
+		</dict>
+	</array>
+	<key>CLIENT_ID</key>
+	<string>105797830130-sdde13lpju8564qb49gc5jldd3as70hh.apps.googleusercontent.com</string>
 </dict>
 </plist>

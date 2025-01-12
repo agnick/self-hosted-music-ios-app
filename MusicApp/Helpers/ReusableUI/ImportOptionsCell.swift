@@ -30,7 +30,7 @@ final class ImportOptionsCell: UITableViewCell {
     static let reuseId: String = "ImportOptionsCell"
     
     // UI Components.
-    private let importOptionImg: UIImageView = UIImageView(image: UIImage(named: "ic-google-drive"))
+    private let importOptionImg: UIImageView = UIImageView()
     private let importOptionTitle: UILabel = UILabel()
     
     // MARK: - Lifecycle

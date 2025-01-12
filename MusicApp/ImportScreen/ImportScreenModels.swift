@@ -8,24 +8,14 @@
 import Foundation
 
 enum ImportScreenModel {
-    // Замени на нужное
-    enum Other {
+    enum AudioFilesFromCloud {
         struct Request {}
         
-        struct Response {}
+        struct Response {
+            let cloudService: CloudServiceType
+            let audioFiles: [AudioFile]
+        }
         
         struct ViewModel {}
-    }
-    
-    enum CloudServiceType {
-        case googleDrive
-        case yandexCloud
-        case dropbox
-        case oneDrive
-    }
-    
-    struct AudioFile {
-        let name: String
-        let url: URL
     }
 }

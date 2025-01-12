@@ -6,13 +6,15 @@
 //
 
 import UIKit
+import GoogleSignIn
+import GoogleAPIClientForREST
 
 final class ImportScreenViewController: UIViewController {
     // MARK: - Enums
     enum ImportScreenConstants {
         // TitleLabel settings.
         static let titleLabelFontSize: CGFloat = 32
-        static let titleLabelTop: CGFloat = 80
+        static let titleLabelTop: CGFloat = 100
         static let titleLabelLeading: CGFloat = 20
         
         // ImportOptionsTableView settings.
@@ -22,19 +24,30 @@ final class ImportScreenViewController: UIViewController {
         static let importOptionsTableViewBottom: CGFloat = 20
         static let importOptionsTableRowHeight: CGFloat = 90
         
-        // Section label settings
+        // Section label settings.
         static let sectionLabelFontSize: CGFloat = 16
     }
     
     // MARK: - Variables
-    private let interactor: (ImportScreenBusinessLogic & ImportScreenDataStore)
+    private let interactor: ImportScreenBusinessLogic
+    private let sections = [
+        ("Облачные хранилища", [
+            ("Google drive", "ic-google-drive"),
+            ("Yandex cloud", "ic-yandex-cloud"),
+            ("Dropbox", "ic-dropbox"),
+            ("One Drive", "ic-one-drive")
+        ]),
+        ("Другие источники", [
+            ("Локальные файлы", "ic-local-files")
+        ])
+    ]
     
-    // UI components
+    // UI components.
     private let titleLabel: UILabel = UILabel()
     private let importOptionsTableView: UITableView = UITableView(frame: .zero)
     
     // MARK: - Lifecycle
-    init(interactor: (ImportScreenBusinessLogic & ImportScreenDataStore)) {
+    init(interactor: ImportScreenBusinessLogic) {
         self.interactor = interactor
         super.init(nibName: nil, bundle: nil)
     }
@@ -48,6 +61,7 @@ final class ImportScreenViewController: UIViewController {
         super.viewDidLoad()
         
         configureUI()
+        interactor.checkAuthorizationForAllServices()
     }
     
     // MARK: - Private methods
@@ -71,6 +85,7 @@ final class ImportScreenViewController: UIViewController {
         titleLabel.textColor = .black
         titleLabel.text = "Импорт музыки"
         
+        // Set constraints to position the title label.
         titleLabel.pinTop(to: view, ImportScreenConstants.titleLabelTop)
         titleLabel.pinLeft(to: view, ImportScreenConstants.titleLabelLeading)
     }
@@ -122,11 +137,11 @@ final class ImportScreenViewController: UIViewController {
 // MARK: - UITableViewDataSource
 extension ImportScreenViewController: UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return interactor.sections.count
+        return sections.count
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return interactor.sections[section].1.count
+        return sections[section].1.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -135,7 +150,8 @@ extension ImportScreenViewController: UITableViewDataSource {
             for: indexPath
         ) as! ImportOptionsCell
         
-        let item = interactor.sections[indexPath.section].1[indexPath.row]
+        // Configure a cell for the given index path.
+        let item = sections[indexPath.section].1[indexPath.row]
         cell.configure(UIImage(named: item.1), item.0)
         cell.accessoryType = .disclosureIndicator
         
@@ -143,15 +159,17 @@ extension ImportScreenViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return interactor.sections[section].0
+        return sections[section].0
     }
     
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        // Create a header view with a background color.
         let headerView = UIView()
         headerView.backgroundColor = UIColor(named: "Background")
         
+        // Create a label for the section title and configure its text, font, and color.
         let label = UILabel()
-        label.text = interactor.sections[section].0
+        label.text = sections[section].0
         label.font = 
             .systemFont(
                 ofSize: ImportScreenConstants.sectionLabelFontSize,
@@ -161,6 +179,7 @@ extension ImportScreenViewController: UITableViewDataSource {
         
         headerView.addSubview(label)
         
+        // Set constraints to position the header view.
         label.pinLeft(to: headerView)
         label.pinTop(to: headerView)
         
@@ -174,9 +193,11 @@ extension ImportScreenViewController: UITableViewDelegate {
         _ tableView: UITableView,
         didSelectRowAt indexPath: IndexPath
     ) {
-        let selectedSection = interactor.sections[indexPath.section]
+        // Identify the selected section and option.
+        let selectedSection = sections[indexPath.section]
         let selectedOption = selectedSection.1[indexPath.row].0
         
+        // Handle the selection based on the chosen option.
         switch selectedOption {
         case "Google drive":
             interactor.handleCloudServiceSelection(service: .googleDrive)
