@@ -29,7 +29,20 @@
 				<string>com.googleusercontent.apps.105797830130-sdde13lpju8564qb49gc5jldd3as70hh</string>
 			</array>
 		</dict>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>yx5297bdd1ed55465097544d58fb680e78</string>
+            </array>
+        </dict>
 	</array>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>primaryyandexloginsdk</string>
+        <string>secondaryyandexloginsdk</string>
+    </array>
 	<key>CLIENT_ID</key>
 	<string>105797830130-sdde13lpju8564qb49gc5jldd3as70hh.apps.googleusercontent.com</string>
 </dict>

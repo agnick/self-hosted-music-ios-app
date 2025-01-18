@@ -1,0 +1,331 @@
+//
+//  AudioFilesOverviewScreenViewController.swift
+//  MusicApp
+//
+//  Created by Никита Агафонов on 07.01.2025.
+//
+
+import UIKit
+
+final class AudioFilesOverviewScreenViewController: UIViewController {
+    // MARK: - Enums
+    enum Constants {
+        // cloudServiceName settings.
+        static let cloudServiceNameFontSize: CGFloat = 32
+        static let cloudServiceNameTop: CGFloat = 100
+        static let cloudServiceNameLeading: CGFloat = 20
+        
+        // downloadAllBtn settings.
+        static let downloadAllBtnFontSize: CGFloat = 16
+        static let downloadAllBtnTop: CGFloat = 20
+        static let downloadAllBtnLeading: CGFloat = 20
+        static let downloadAllBtnTrailing: CGFloat = 20
+        static let downloadAllBtnHeight: CGFloat = 45
+        static let downloadAllBtnCornerRadius: CGFloat = 10
+        static let downloadAllBtnImagePadding: CGFloat = 5
+        
+        // audioFilesTable settings.
+        static let audioFilesTableViewTop: CGFloat = 5
+        static let audioFilesTableLeading: CGFloat = 20
+        static let audioFilesTableTrailing: CGFloat = 20
+        static let audioFilesTableBottom: CGFloat = 10
+        static let audioFilesTableRowHeight: CGFloat = 90
+        
+        // audioFilesCount settings.
+        static let audioFilesCountFontSize: CGFloat = 12
+        static let audioFilesCountBottom: CGFloat = 20
+        static let audioFilesCountLeading: CGFloat = 20
+    }
+    
+    // MARK: - Variables
+    private let interactor: AudioFilesOverviewScreenBusinessLogic
+    
+    // UI components
+    private let cloudServiceName: UILabel = UILabel()
+    private let downloadAllBtn: UIButton = UIButton(type: .system)
+    private let activityIndicator: UIActivityIndicatorView = UIActivityIndicatorView(
+        style: .large
+    )
+    private let audioFilesTable: UITableView = UITableView(frame: .zero)
+    private let audioFilesCount: UILabel = UILabel()
+    
+    // MARK: - Lifecycle
+    init(interactor: AudioFilesOverviewScreenBusinessLogic) {
+        self.interactor = interactor
+        
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(parameters:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        configureUI()
+        
+        interactor.loadStart(AudioFilesOverviewScreenModel.Start.Request())
+        activityIndicator.startAnimating()
+        interactor
+            .fetchAudioFiles(
+                AudioFilesOverviewScreenModel.FetchedFiles.Request()
+            )
+    }
+    
+    // MARK: - Actions
+    @objc private func backBtnTapped() {
+        navigationController?.popViewController(animated: true)
+    }
+    
+    @objc private func downloadAllTapped() {
+        downloadAllBtn.isEnabled = false
+        downloadAllBtn.alpha = 0.5
+        interactor.downloadAllAudioFiles()
+    }
+    
+    // MARK: - Public methods
+    func displayAudioFiles(
+        _ viewModel: AudioFilesOverviewScreenModel.FetchedFiles.ViewModel
+    ) {
+        activityIndicator.stopAnimating()
+        audioFilesTable.reloadData()
+        audioFilesCount.text = "Всего треков: \(viewModel.audioFilesCount)"
+    }
+    
+    func displayStart(
+        _ viewModel: AudioFilesOverviewScreenModel.Start.ViewModel
+    ) {
+        cloudServiceName.text = viewModel.serviceName
+    }
+    
+    func displayDownloadAudio(
+        _ viewModel: AudioFilesOverviewScreenModel.DownloadAudio.ViewModel
+    ) {
+        print("here")
+    }
+    
+    func displayError(
+        _ viewModel: AudioFilesOverviewScreenModel.Error.ViewModel
+    ) {
+        let actions = [UIAlertAction(title: "OK", style: .default)]
+        
+        self.presentAlert(
+            title: "Ошибка",
+            message: viewModel.errorDescription,
+            actions: actions
+        )
+    }
+    
+    // MARK: - Private methods
+    private func configureUI() {
+        navigationController?.navigationBar.topItem?.backBarButtonItem = UIBarButtonItem(
+            title: "Импорт",
+            style: .plain,
+            target: nil,
+            action: nil
+        )
+        
+        // Set the background color to the default one from the assets.
+        view.backgroundColor = UIColor(color: .background)
+        
+        configureCloudServiceName()
+        configureDownloadAllBtn()
+        configureAudioFilesCount()
+        configureAudioFilesTable()
+        configureActivityIndicator()
+    }
+    
+    private func configureCloudServiceName() {
+        view.addSubview(cloudServiceName)
+        
+        // Setting the font and text color.
+        cloudServiceName.font =
+            .systemFont(
+                ofSize: Constants.cloudServiceNameFontSize,
+                weight: .bold
+            )
+        cloudServiceName.textColor = .black
+        
+        cloudServiceName
+            .pinTop(
+                to: view,
+                Constants.cloudServiceNameTop
+            )
+        cloudServiceName
+            .pinLeft(
+                to: view,
+                Constants.cloudServiceNameLeading
+            )
+    }
+    
+    private func configureDownloadAllBtn() {
+        view.addSubview(downloadAllBtn)
+        
+        var configuration = UIButton.Configuration.filled()
+        configuration.image = UIImage(image: .icAudioDownload)
+        configuration.baseBackgroundColor = UIColor(color: .buttonColor)
+        configuration.baseForegroundColor = UIColor(color: .primary)
+        configuration.cornerStyle = .medium
+        configuration.imagePadding = Constants.downloadAllBtnImagePadding
+        configuration.imagePlacement = .leading
+        
+        var attributedTitle = AttributedString("Скачать все треки")
+        attributedTitle.font = 
+            .systemFont(
+                ofSize: Constants.downloadAllBtnFontSize,
+                weight: .semibold
+            )
+        attributedTitle.foregroundColor = UIColor(
+            color: .primary
+        )
+        configuration.attributedTitle = attributedTitle
+            
+        downloadAllBtn.configuration = configuration
+        
+        downloadAllBtn
+            .pinTop(
+                to: cloudServiceName.bottomAnchor,
+                Constants.downloadAllBtnTop
+            )
+        downloadAllBtn
+            .pinLeft(
+                to: view,
+                Constants.downloadAllBtnLeading
+            )
+        downloadAllBtn
+            .pinRight(
+                to: view,
+                Constants.downloadAllBtnTrailing
+            )
+        downloadAllBtn
+            .setHeight(Constants.downloadAllBtnHeight)
+            
+        downloadAllBtn
+            .addTarget(
+                self,
+                action: #selector(downloadAllTapped),
+                for: .touchUpInside
+            )
+    }
+    
+    private func configureAudioFilesCount() {
+        view.addSubview(audioFilesCount)
+        
+        // Setting the font and text color.
+        audioFilesCount.font =
+            .systemFont(
+                ofSize: Constants.audioFilesCountFontSize,
+                weight: .medium
+            )
+        audioFilesCount.textColor = .systemGray
+        
+        audioFilesCount
+            .pinBottom(
+                to: view.safeAreaLayoutGuide.bottomAnchor,
+                Constants.audioFilesCountBottom
+            )
+        audioFilesCount
+            .pinLeft(
+                to: view,
+                Constants.audioFilesCountLeading
+            )
+    }
+    
+    private func configureAudioFilesTable() {
+        view.addSubview(audioFilesTable)
+        
+        audioFilesTable.backgroundColor = .clear
+        audioFilesTable.separatorStyle = .none
+        
+        // Set the data source and delegate for the tableView view.
+        audioFilesTable.dataSource = self
+        audioFilesTable.delegate = self
+        
+        // Register the cell class for reuse.
+        audioFilesTable
+            .register(
+                AudioFilesCell.self,
+                forCellReuseIdentifier: AudioFilesCell.reuseId
+            )
+        
+        audioFilesTable.isScrollEnabled = true
+        audioFilesTable.alwaysBounceVertical = true
+        audioFilesTable.contentInset = .zero
+        audioFilesTable.contentInsetAdjustmentBehavior = .never
+        
+        // Set constraints to position the table view.
+        audioFilesTable
+            .pinTop(
+                to: downloadAllBtn.bottomAnchor, Constants.audioFilesTableViewTop)
+        audioFilesTable
+            .pinLeft(
+                to: view,
+                Constants.audioFilesTableLeading
+            )
+        audioFilesTable
+            .pinRight(
+                to: view,
+                Constants.audioFilesTableTrailing
+            )
+        audioFilesTable
+            .pinBottom(
+                to: audioFilesCount.topAnchor,
+                Constants.audioFilesTableBottom
+            )
+    }
+    
+    private func configureActivityIndicator() {
+        view.addSubview(activityIndicator)
+        
+        // Set indicator settings.
+        activityIndicator.color = UIColor(color: .primary)
+        activityIndicator.hidesWhenStopped = true
+        
+        // Set constraints to position the indicator.
+        activityIndicator.pinCenter(to: view)
+    }
+}
+
+// MARK: - UITableViewDataSource
+extension AudioFilesOverviewScreenViewController: UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return interactor.getAudioFiles().count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(
+            withIdentifier: AudioFilesCell.reuseId,
+            for: indexPath
+        ) as! AudioFilesCell
+        
+        let audioFile = interactor.getAudioFiles()[indexPath.row]
+        
+        cell.configure(audioFile.name, audioFile.sizeInMB, isDownloading: audioFile.isDownloading)
+        cell.downloadAction = { [weak self] in
+            self?.interactor
+                .downloadAudioFiles(
+                    AudioFilesOverviewScreenModel.DownloadAudio
+                        .Request(audioFile: audioFile, rowIndex: indexPath.row)
+                )
+        }
+        
+        return cell
+    }
+}
+
+// MARK: - UITableViewDelegate
+extension AudioFilesOverviewScreenViewController: UITableViewDelegate {
+    func tableView(
+        _ tableView: UITableView,
+        didSelectRowAt indexPath: IndexPath
+    ) {
+        
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return Constants.audioFilesTableRowHeight
+    }
+}
+

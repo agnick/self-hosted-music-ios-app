@@ -14,4 +14,5 @@ struct AudioFile {
     let sizeInMB: Double
     let durationInSeconds: Int
     let artistName: String?
+    var isDownloading: Bool = false
 }
