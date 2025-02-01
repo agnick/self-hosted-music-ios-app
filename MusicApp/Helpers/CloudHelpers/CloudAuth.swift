@@ -12,19 +12,16 @@ struct CloudAuthService {
     private let cloudAuth = CloudAuth.shared
     
     // MARK: - Public methods
-    func authorize(
-        for service: CloudServiceType,
-        completion: @escaping (Result<Void, Error>) -> Void
-    ) {
-        cloudAuth.authorize(for: service, completion: completion)
+    func authorize(for service: CloudServiceType) async throws {
+        try await cloudAuth.authorize(for: service)
     }
     
-    func reauthorize(for service: CloudServiceType, completion: @escaping (Result<Void, Error>) -> Void) {
-        cloudAuth.reauthorize(for: service, completion: completion)
+    func reauthorize(for service: CloudServiceType) async throws {
+        try await cloudAuth.reauthorize(for: service)
     }
     
-    func logout(from service: CloudServiceType, completion: @escaping (Result<Void, Error>) -> Void) {
-        cloudAuth.logout(from: service, completion: completion)
+    func logout(from service: CloudServiceType) async throws {
+        try await cloudAuth.logout(from: service)
     }
     
     func isAuthorized(for service: CloudServiceType) -> Bool {
@@ -49,66 +46,39 @@ final class CloudAuth {
     private init() {}
     
     // MARK: - Authorization methods
-    func authorize(
-        for service: CloudServiceType,
-        completion: @escaping (Result<Void, Error>) -> Void
-    ) {
+    func authorize(for service: CloudServiceType) async throws {
         guard let worker = cloudWorkerService.getWorker(for: service) else {
-            completion(.failure(NSError(domain: "Worker not found", code: 404)))
-            return
+            throw NSError(domain: "Worker not found", code: 404)
         }
         
         if authorizedService == service {
-            completion(.success(()))
             return
         }
         
-        worker.authorize { [weak self] result in
-            switch result {
-            case .success:
-                self?.authorizedService = service
-                completion(.success(()))
-            case .failure(let error):
-                completion(.failure(error))
-            }
+        try await worker.authorize()
+        authorizedService = service
+    }
+    
+    func reauthorize(for service: CloudServiceType) async throws {
+        guard let worker = cloudWorkerService.getWorker(for: service) else {
+            throw NSError(domain: "Worker not found", code: 404)
+        }
+        
+        do {
+            try await worker.reauthorize()
+            authorizedService = service
+        } catch {
+            throw NSError(domain: "\(service) reauthorization failed", code: 401, userInfo: [NSLocalizedDescriptionKey: error.localizedDescription])
         }
     }
     
-    func reauthorize(
-        for service: CloudServiceType,
-        completion: @escaping (Result<Void, Error>) -> Void
-    ) {
+    func logout(from service: CloudServiceType) async throws {
         guard let worker = cloudWorkerService.getWorker(for: service) else {
-            completion(.failure(NSError(domain: "Worker not found", code: 404)))
-            return
+            throw NSError(domain: "Worker not found", code: 404)
         }
         
-        worker.reauthorize { [weak self] result in
-            switch result {
-            case .success:
-                self?.authorizedService = service
-                completion(.success(()))
-            case .failure(let error):
-                completion(.failure(error))
-            }
-        }
-    }
-    
-    func logout(from service: CloudServiceType, completion: @escaping (Result<Void, Error>) -> Void) {
-        guard let worker = cloudWorkerService.getWorker(for: service) else {
-            completion(.failure(NSError(domain: "Worker not found", code: 404)))
-            return
-        }
-        
-        worker.logout { [weak self] result in
-            switch result {
-            case .success:
-                self?.authorizedService = nil
-                completion(.success(()))
-            case .failure(let error):
-                completion(.failure(error))
-            }
-        }
+        try await worker.logout()
+        authorizedService = nil
     }
     
     // MARK: - Utility methods

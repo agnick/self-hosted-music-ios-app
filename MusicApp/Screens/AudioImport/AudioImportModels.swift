@@ -1,5 +1,5 @@
 //
-//  ImportScreenModels.swift
+//  AudioImportModels.swift
 //  MusicApp
 //
 //  Created by Никита Агафонов on 28.12.2024.
@@ -23,6 +23,18 @@ enum AudioImportModel {
     enum CloudServiceSelection {
         struct Request {
             let service: CloudServiceType
+        }
+        
+        struct Response {
+        }
+        
+        struct ViewModel {
+        }
+    }
+    
+    enum LocalFiles {
+        struct Request {
+            let urls: [URL]
         }
         
         struct Response {

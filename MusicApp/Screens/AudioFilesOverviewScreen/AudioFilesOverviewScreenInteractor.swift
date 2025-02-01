@@ -20,13 +20,12 @@ final class AudioFilesOverviewScreenInteractor: AudioFilesOverviewScreenBusiness
     }
     
     func fetchAudioFiles(_ request: AudioFilesOverviewScreenModel.FetchedFiles.Request) {
-        cloudAudioService.fetchAudioFiles(for: service, forceRefresh: true) { [weak self] result in
-            switch result {
-            case .success:
-                let audioFiles = self?.getAudioFiles()
-                self?.presenter.presentAudioFiles(AudioFilesOverviewScreenModel.FetchedFiles.Response(audioFiles: audioFiles))
-            case .failure(let error):
-                self?.presenter.presentError(AudioFilesOverviewScreenModel.Error.Response(error: error))
+        Task {
+            do {
+                let audioFiles = try await cloudAudioService.fetchAudioFiles(for: service, forceRefresh: true)
+                presenter.presentAudioFiles(AudioFilesOverviewScreenModel.FetchedFiles.Response(audioFiles: audioFiles))
+            } catch {
+                presenter.presentError(AudioFilesOverviewScreenModel.Error.Response(error: error))
             }
         }
     }
@@ -44,22 +43,23 @@ final class AudioFilesOverviewScreenInteractor: AudioFilesOverviewScreenBusiness
         presenter.presentAudioFiles(AudioFilesOverviewScreenModel.FetchedFiles.Response(audioFiles: getAudioFiles()))
         
         Task {
-            let urlFile = await cloudAudioService.downloadAudioFile(for : service, urlstring: urlstring, fileName: fileName)
-            
-            if let urlFile = urlFile {
-                print(urlFile)
+            do {
+                let urlFile = try await cloudAudioService.downloadAudioFile(for : service, urlstring: urlstring, fileName: fileName)
                 presenter.presentDownloadedAudioFiles(AudioFilesOverviewScreenModel.DownloadAudio.Response(urlFile: urlFile))
-            } else {
-                presenter.presentError(AudioFilesOverviewScreenModel.Error.Response(error: NSError(domain: "Download error", code: 0)))
+            } catch {
+                presenter.presentError(AudioFilesOverviewScreenModel.Error.Response(error: error))
             }
         }
     }
     
     func downloadAllAudioFiles() {
-        let audioFiles = getAudioFiles()
-        for (index, audioFile) in audioFiles.enumerated() {
-            let request = AudioFilesOverviewScreenModel.DownloadAudio.Request(audioFile: audioFile, rowIndex: index)
-            downloadAudioFiles(request)
+        Task {
+            let audioFiles = getAudioFiles()
+            for (index, audioFile) in audioFiles.enumerated() {
+                let request = AudioFilesOverviewScreenModel.DownloadAudio.Request(audioFile: audioFile, rowIndex: index)
+                
+                downloadAudioFiles(request)
+            }
         }
     }
     

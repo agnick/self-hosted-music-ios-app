@@ -27,13 +27,7 @@ final class AudioFilesOverviewScreenPresenter: AudioFilesOverviewScreenPresentat
         _ response: AudioFilesOverviewScreenModel.Error.Response
     ) {
         DispatchQueue.main.async {
-            self.view?
-                .displayError(
-                    AudioFilesOverviewScreenModel.Error
-                        .ViewModel(
-                            errorDescription: response.error.localizedDescription
-                        )
-                )
+            self.view?.displayError(AudioFilesOverviewScreenModel.Error.ViewModel(errorDescription: response.error.localizedDescription))
         }
     }
     
@@ -42,11 +36,10 @@ final class AudioFilesOverviewScreenPresenter: AudioFilesOverviewScreenPresentat
     ) {
         DispatchQueue.main.async {
             let audioFilesCount = response.audioFiles?.count ?? 0
-            self.view?
-                .displayAudioFiles(
-                    AudioFilesOverviewScreenModel.FetchedFiles
-                        .ViewModel(audioFilesCount: audioFilesCount)
-                )
+            self.view?.displayAudioFiles(
+                AudioFilesOverviewScreenModel.FetchedFiles
+                    .ViewModel(audioFilesCount: audioFilesCount)
+            )
         }
     }
     
@@ -54,7 +47,11 @@ final class AudioFilesOverviewScreenPresenter: AudioFilesOverviewScreenPresentat
         _ response: AudioFilesOverviewScreenModel.DownloadAudio.Response
     ) {
         DispatchQueue.main.async {
-            self.view?.displayDownloadAudio(AudioFilesOverviewScreenModel.DownloadAudio.ViewModel(urlFile: response.urlFile))
+            self.view?
+                .displayDownloadAudio(
+                    AudioFilesOverviewScreenModel.DownloadAudio
+                        .ViewModel(urlFile: response.urlFile)
+                )
         }
     }
     

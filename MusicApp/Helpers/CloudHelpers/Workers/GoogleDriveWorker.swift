@@ -7,137 +7,147 @@
 
 import GoogleSignIn
 import GoogleAPIClientForREST
+import AVFoundation
 
 final class GoogleDriveWorker: CloudWorkerProtocol {
     // MARK: - Variables
     private var driveService = GTLRDriveService()
     
     // MARK: - Public methods
-    func authorize(
-        completion: @escaping (Result<Void, Error>) -> Void
-    ) {
+    func authorize() async throws {
         guard let clientID = Bundle.main.object(forInfoDictionaryKey: "CLIENT_ID") as? String else {
-            completion(
-                .failure(
-                    NSError(domain: "Missing CLIENT_ID in Info.plist", code: 1)
-                )
-            )
-            return
+            throw NSError(domain: "Missing CLIENT_ID in Info.plist", code: 1)
         }
         
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let rootViewController = windowScene.windows.first?.rootViewController else {
-            completion(
-                .failure(
-                    NSError(
-                        domain: "Unable to find root view controller",
-                        code: 3,
-                        userInfo: nil
-                    )
-                )
-            )
-            return
+        let rootViewController: UIViewController = try await MainActor.run {
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+            let rootViewController = windowScene.windows.first?.rootViewController else {
+                throw NSError(domain: "Unable to find root view controller", code: 3)
+                }
+            
+            return rootViewController
         }
         
         let scopes = ["https://www.googleapis.com/auth/drive"]
-        GIDSignIn.sharedInstance
-            .signIn(
-                with: GIDConfiguration(clientID: clientID),
-                presenting: rootViewController,
-                hint: nil,
-                additionalScopes: scopes
-            ) {
-                user,
-                error in
-                if let error = error {
-                    completion(.failure(error))
-                    return
-                }
-            
-                guard let authentication = user?.authentication else {
-                    completion(
-                        .failure(
-                            NSError(
-                                domain: "Authorization failed",
-                                code: 3,
-                                userInfo: nil
-                            )
-                        )
-                    )
-                    return
-                }
-            
-                self.driveService.authorizer = authentication
-                    .fetcherAuthorizer()
-                completion(.success(()))
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            DispatchQueue.main.async {
+                GIDSignIn.sharedInstance
+                    .signIn(
+                        with: GIDConfiguration(clientID: clientID),
+                        presenting: rootViewController,
+                        hint: nil,
+                        additionalScopes: scopes
+                    ) {
+                        user,
+                        error in
+                        if let error = error {
+                            continuation.resume(throwing: error)
+                            return
+                        }
+                        
+                        guard let authentication = user?.authentication else {
+                            continuation.resume(throwing: NSError(domain: "Authorization failed", code: 3, userInfo: nil))
+                            return
+                        }
+                        
+                        self.driveService.authorizer = authentication
+                            .fetcherAuthorizer()
+                        continuation.resume()
+                    }
             }
+        }
     }
     
-    func getAccessToken(completion: @escaping (Result<String, any Error>) -> Void) {
+    func getAccessToken() async throws -> String {
         guard let accessToken = GIDSignIn.sharedInstance.currentUser?.authentication.accessToken else {
-            completion(.failure(NSError(domain: "Token not found", code: 404)))
-            return
+            throw NSError(domain: "Token not found", code: 404)
         }
         
-        completion(.success(accessToken))
+        return accessToken
     }
     
-    func reauthorize(completion: @escaping (Result<Void, any Error>) -> Void) {
-        GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
-            if let error = error {
-                completion(.failure(error))
-                return
+    func reauthorize() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let user = user else {
+                    continuation.resume(throwing: NSError(domain: "User not found", code: 404))
+                    return
+                }
+                
+                self.driveService.authorizer = user.authentication
+                    .fetcherAuthorizer()
+                continuation.resume()
             }
-            
-            guard let user = user else {
-                completion(.failure(NSError(domain: "User not found", code: 404)))
-                return
-            }
-            
-            self.driveService.authorizer = user.authentication.fetcherAuthorizer()
-            completion(.success(()))
         }
     }
     
-    func logout(completion: @escaping (Result<Void, any Error>) -> Void) {
-        GIDSignIn.sharedInstance.signOut()
-        driveService.authorizer = nil
-        completion(.success(()))
+    func logout() async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            GIDSignIn.sharedInstance.signOut()
+            driveService.authorizer = nil
+            continuation.resume()
+        }
     }
     
-    func fetchAudio(
-        completion: @escaping (
-            Result<[AudioFile], Error>
-        ) -> Void
-    ) {
+    func fetchAudio() async throws -> [AudioFile] {
         let query = GTLRDriveQuery_FilesList.query()
         query.q = "mimeType contains 'audio/' and trashed = false"
-        query.fields = "files(id, name, webContentLink, size)"
+        query.fields = "files(id, name, webContentLink, size, videoMediaMetadata(durationMillis))"
         
-        driveService.executeQuery(query) { _, result, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            
-            guard let fileList = result as? GTLRDrive_FileList,
-                  let files = fileList.files else {
-                completion(.success([]))
-                return
-            }
-            
-            let audioFiles = files.compactMap { file -> AudioFile? in
-                guard let name = file.name, let webContentLink = file.webContentLink, let fileSize = file.size?.doubleValue else {
-                    return nil
+        let result: GTLRDrive_FileList = try await withCheckedThrowingContinuation { continuation in
+            driveService.executeQuery(query) { _, result, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
                 }
                 
-                let url = URL(string: webContentLink)!
+                guard let fileList = result as? GTLRDrive_FileList else {
+                    continuation
+                        .resume(
+                            throwing: NSError(
+                                domain: "FetchAudioError",
+                                code: -1,
+                                userInfo: [NSLocalizedDescriptionKey: "Invalid response"]
+                            )
+                        )
+                    return
+                }
                 
-                return AudioFile(name: name, url: url, sizeInMB: fileSize / (1024 * 1024), durationInSeconds: 0, artistName: nil)
+                continuation.resume(returning: fileList)
+            }
+        }
+        
+        guard let files = result.files else {
+            return []
+        }
+        
+        var audioFiles: [AudioFile] = []
+        
+        for file in files {
+            guard let name = file.name,
+                  let webContentLink = file.webContentLink,
+                  let fileSize = file.size?.doubleValue,
+                  let url = URL(string: webContentLink) else {
+                continue
             }
             
-            completion(.success(audioFiles))
+            let audioFile = AudioFile(
+                name: name,
+                url: url,
+                sizeInMB: fileSize / (1024 * 1024),
+                durationInSeconds: 0,
+                artistName: name
+            )
+            
+            audioFiles.append(audioFile)
         }
+        
+        return audioFiles
     }
     
     func getDownloadRequest(urlstring: String) -> URLRequest? {

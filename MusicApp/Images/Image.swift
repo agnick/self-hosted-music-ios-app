@@ -19,7 +19,10 @@ enum Image: String {
     case icPlaylists = "ic-playlists"
     case icSettings = "ic-settings"
     case icPlay = "ic-play"
+    case icPause = "ic-pause"
     case icShuffle = "ic-shuffle"
+    case icMeatballsMenu = "ic-meatballs-menu"
+    case icNextTrack = "ic-next-track"
 }
 
 extension UIImage {

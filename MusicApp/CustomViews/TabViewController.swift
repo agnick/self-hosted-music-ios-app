@@ -8,11 +8,15 @@
 import UIKit
 
 final class TabViewController: UITabBarController {
+    // MARK: - Variables
+    private let miniPlayerView = MiniPlayerView()
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupTabs()
+        setupMiniPlayerView()
     }
     
     // MARK: - Configure Tab Bar
@@ -54,5 +58,25 @@ final class TabViewController: UITabBarController {
         nav.tabBarItem.image = image
         
         return nav
+    }
+    
+    private func setupMiniPlayerView() {
+        miniPlayerView.delegate = self
+        view.addSubview(miniPlayerView)
+        
+        miniPlayerView.pinLeft(to: view)
+        miniPlayerView.pinRight(to: view)
+        miniPlayerView.pinBottom(to: tabBar.topAnchor)
+        miniPlayerView.setHeight(60)
+    }
+}
+
+extension TabViewController: MiniPlayerViewDelegate {
+    func miniPlayerViewDidTap(_ miniPlayerView: MiniPlayerView) {
+        
+    }
+    
+    func miniPlayerPlayPauseTapped(_ miniPlayerVie: MiniPlayerView) {
+        AudioPlayerManager.shared.togglePlayPause()
     }
 }

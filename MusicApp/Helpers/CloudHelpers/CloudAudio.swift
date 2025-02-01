@@ -12,22 +12,12 @@ struct CloudAudioService {
     private let cloudAudio = CloudAudio.shared
     
     // MARK: - Public methods
-    func fetchAudioFiles(
-        for service: CloudServiceType,
-        forceRefresh: Bool = false,
-        completion: @escaping (Result<[AudioFile], Error>) -> Void
-    ) {
-        cloudAudio
-            .fetchFiles(
-                for: service,
-                forceRefresh: forceRefresh,
-                completion: completion
-            )
+    func fetchAudioFiles(for service: CloudServiceType, forceRefresh: Bool = false) async throws -> [AudioFile] {
+        return try await cloudAudio.fetchFiles(for: service, forceRefresh: forceRefresh)
     }
     
-    func downloadAudioFile(for service: CloudServiceType, urlstring: String, fileName: String) async -> URL? {
-        await cloudAudio
-            .downloadAudioFile(for: service, urlstring: urlstring, fileName: fileName)
+    func downloadAudioFile(for service: CloudServiceType, urlstring: String, fileName: String) async throws -> URL {
+        return try await cloudAudio.downloadAudioFile(for: service, urlstring: urlstring, fileName: fileName)
     }
     
     func setDownloadingState(for rowIndex: Int, isDownloading: Bool) {
@@ -55,41 +45,32 @@ final class CloudAudio {
     // MARK: - File Fetching
     func fetchFiles(
         for service: CloudServiceType,
-        forceRefresh: Bool = false,
-        completion: @escaping (Result<[AudioFile], Error>) -> Void
-    ) {
+        forceRefresh: Bool = false
+    ) async throws -> [AudioFile] {
         guard let worker = cloudWorkerService.getWorker(for: service) else {
-            completion(.failure(NSError(domain: "Worker not found", code: 404)))
-            return
+            throw NSError(domain: "Worker not found", code: 404)
         }
         
         guard service == cloudAuthService.getAuthorizedService() else {
-            completion(.failure(NSError(domain: "Not authorized", code: 401)))
-            return
+            throw NSError(domain: "Not authorized", code: 401)
         }
         
         if forceRefresh {
             audioFiles.removeAll()
         }
 
-        worker.fetchAudio { [weak self] result in
-            switch result {
-            case .success(let files):
-                self?.audioFiles = files
-                completion(.success(files))
-            case .failure(let error):
-                completion(.failure(error))
-            }
-        }
+        let fetchedFiles = try await worker.fetchAudio()
+        audioFiles = fetchedFiles
+        return fetchedFiles
     }
     
-    func downloadAudioFile(for service: CloudServiceType, urlstring: String, fileName: String) async -> URL? {
+    func downloadAudioFile(for service: CloudServiceType, urlstring: String, fileName: String) async throws -> URL {
         guard let worker = cloudWorkerService.getWorker(for: service) else {
-            return nil
+            throw NSError(domain: "Worker not found", code: 404)
         }
         
         guard var request = worker.getDownloadRequest(urlstring: urlstring) else {
-            return nil
+            throw NSError(domain: "Invalid download URL", code: 400, userInfo: nil)
         }
         
         request.httpMethod = "GET"
@@ -99,55 +80,52 @@ final class CloudAudio {
                 for: request
             )
             
-                if let response = response as? HTTPURLResponse {
-                    // Проверяем Content-Type
-                    if let contentType = response.value(
-                        forHTTPHeaderField: "Content-Type"
-                    ),
-                       !contentType.contains("audio") {
-                        print("Invalid file type: \(contentType)")
-                        return nil
-                    }
-                
-                
-                if response.statusCode == 200 {
-                    print("download finished")
-                    let documentsUrl = try! FileManager.default.url(
-                        for: .documentDirectory,
-                        in: .userDomainMask,
-                        appropriateFor: nil,
-                        create: false
-                    )
-                    let destinationUrl = documentsUrl.appendingPathComponent(
-                        fileName
-                    )
-                    print(destinationUrl)
-                    
-                    if FileManager().fileExists(atPath: destinationUrl.path) {
-                        print(
-                            "File already exists [\(destinationUrl.path)], removing it."
-                        )
-                        try FileManager.default.removeItem(at: destinationUrl)
-                    }
-                    
-                    try! data.write(to: destinationUrl)
-                    return destinationUrl
-                }
+            guard let response = response as? HTTPURLResponse else {
+                throw NSError(domain: "Invalid response", code: 500, userInfo: nil)
             }
+            
+            guard response.statusCode == 200 else {
+                throw NSError(domain: "HTTP Error", code: response.statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed with status code: \(response.statusCode)"])
+            }
+            
+            if let contentType = response.value(forHTTPHeaderField: "Content-Type"), !contentType.contains("audio") {
+                throw NSError(domain: "Invalid file type", code: 415, userInfo: [NSLocalizedDescriptionKey: "Expected audio file, but got \(contentType)"])
+            }
+            
+            let documentsUrl = try FileManager.default.url(
+                for: .documentDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: false
+            )
+            let destinationUrl = documentsUrl.appendingPathComponent(
+                fileName
+            )
+            
+            if FileManager().fileExists(atPath: destinationUrl.path) {
+                print(
+                    "File already exists [\(destinationUrl.path)], removing it."
+                )
+                try FileManager.default.removeItem(at: destinationUrl)
+            }
+            
+            try! data.write(to: destinationUrl)
+            print("Download finished: \(destinationUrl)")
+            
+            return destinationUrl
         } catch {
             print("Error downloading file: \(error.localizedDescription)")
+            throw error
         }
-        
-        return nil
     }
     
+    // MARK: - Utility Methods
     func setDownloadingState(for rowIndex: Int, isDownloading: Bool) {
         if rowIndex < audioFiles.count {
             audioFiles[rowIndex].isDownloading = isDownloading
         }
     }
     
-    // MARK: - Utility Methods
     func getAudioFiles() -> [AudioFile] {
         return audioFiles
     }

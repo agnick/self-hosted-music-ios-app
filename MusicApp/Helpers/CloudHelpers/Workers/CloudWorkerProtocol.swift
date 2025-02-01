@@ -8,10 +8,11 @@
 import Foundation
 
 protocol CloudWorkerProtocol {
-    func authorize(completion: @escaping (Result<Void, Error>) -> Void)
-    func fetchAudio(completion: @escaping (Result<[AudioFile], Error>) -> Void)
-    func getAccessToken(completion: @escaping (Result<String, Error>) -> Void)
-    func reauthorize(completion: @escaping (Result<Void, Error>) -> Void)
-    func logout(completion: @escaping (Result<Void, Error>) -> Void)
+    func authorize() async throws
+    func fetchAudio() async throws -> [AudioFile]
+    func getAccessToken() async throws -> String
+    func reauthorize() async throws
+    func logout() async throws
+    
     func getDownloadRequest(urlstring: String) -> URLRequest?
 }

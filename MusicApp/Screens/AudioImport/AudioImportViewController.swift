@@ -1,11 +1,12 @@
 //
-//  ImportScreenViewController.swift
+//  AudioImportViewController.swift
 //  MusicApp
 //
 //  Created by Никита Агафонов on 28.12.2024.
 //
 
 import UIKit
+import UniformTypeIdentifiers
 
 final class AudioImportViewController: UIViewController {
     // MARK: - Enums
@@ -57,10 +58,16 @@ final class AudioImportViewController: UIViewController {
         super.viewDidLoad()
         
         configureUI()
-        interactor.checkAuthorizationForAllServices()
     }
     
     // MARK: - Public methods
+    func displayFilePicker() {
+        let documentPicker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType.audio])
+        documentPicker.delegate = self
+        documentPicker.allowsMultipleSelection = true
+        present(documentPicker, animated: true)
+    }
+    
     func displayError(viewModel: AudioImportModel.Error.ViewModel) {
         let actions = [UIAlertAction(title: "OK", style: .default)]
         
@@ -215,5 +222,18 @@ extension AudioImportViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return Constants.importOptionsTableRowHeight
+    }
+}
+
+// MARK: - UIDocumentPickerDelegate
+extension AudioImportViewController: UIDocumentPickerDelegate {
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard !urls.isEmpty else {
+            return
+        }
+        
+        Task {
+            await interactor.copySelectedFilesToAppSupportFolder(AudioImportModel.LocalFiles.Request(urls: urls))
+        }
     }
 }

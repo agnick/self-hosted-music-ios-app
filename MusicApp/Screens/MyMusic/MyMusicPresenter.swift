@@ -11,11 +11,18 @@ final class MyMusicPresenter: MyMusicPresentationLogic {
     weak var view: MyMusicViewController?
     
     func presentStart(_ request: MyMusicModel.Start.Response) {
-        let cloudServiceName = request.cloudService?.displayName ?? "Не подключено"
-        view?.displayStart(MyMusicModel.Start.ViewModel(cloudServiceName: cloudServiceName))
+        DispatchQueue.main.async {
+            let cloudServiceName = request.cloudService?.displayName ?? "Не подключено"
+            self.view?
+                .displayStart(
+                    MyMusicModel.Start.ViewModel(cloudServiceName: cloudServiceName)
+                )
+        }
     }
     
-    func presentCloudAudioFiles(_ response: MyMusicModel.FetchedFiles.Response) {
+    func presentAudioFiles(
+        _ response: MyMusicModel.FetchedFiles.Response
+    ) {
         DispatchQueue.main.async {
             let audioFilesCount = response.audioFiles?.count ?? 0
             self.view?
@@ -39,6 +46,7 @@ final class MyMusicPresenter: MyMusicPresentationLogic {
     }
     
     func routeTo() {
-        view?.navigationController?.pushViewController(UIViewController(), animated: true)
+        view?.navigationController?
+            .pushViewController(UIViewController(), animated: true)
     }
 }

@@ -30,6 +30,41 @@ enum MyMusicModel {
         }
     }
     
+    enum Sort {
+        struct Request {
+            let sortType: SortType
+        }
+        
+        struct Response {
+        }
+        
+        struct ViewModel {
+        }
+    }
+    
+    enum Search {
+        struct Request {
+            let query: String
+        }
+        
+        struct Response {
+        }
+        
+        struct ViewModel {
+        }
+    }
+    
+    enum Play {
+        struct Request {
+        }
+        
+        struct Response {
+        }
+        
+        struct ViewModel {
+        }
+    }
+    
     enum Error {
         struct Request {}
         

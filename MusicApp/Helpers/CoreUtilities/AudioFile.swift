@@ -12,7 +12,7 @@ struct AudioFile {
     let name: String
     let url: URL
     let sizeInMB: Double
-    let durationInSeconds: Int
-    let artistName: String?
+    let durationInSeconds: Double
+    let artistName: String
     var isDownloading: Bool = false
 }

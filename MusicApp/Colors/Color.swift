@@ -13,6 +13,7 @@ enum Color: String {
     case background = "Background"
     case buttonColor = "ButtonColor"
     case cellsColor = "CellsColor"
+    case miniPlayerColor = "MiniPlayerColor"
 }
 
 extension UIColor {

@@ -7,4 +7,5 @@
 
 enum UserDefaultsKeys {
     static let hasCompletedOnboarding: String = "hasCompletedOnboarding"
+    static let sortKey: String = "selectedSortType"
 }

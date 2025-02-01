@@ -20,19 +20,18 @@ final class SettingsScreenInteractor: SettingsScreenBusinessLogic {
     }
     
     func logoutFromService(_ request: SettingsScreenModel.Logout.Request) {
-        guard let cloudService = cloudAuthService.getAuthorizedService() else {
-            print("Not logged")
-            return
-        }
-        
-        cloudAuthService.logout(from: cloudService) { result in
-            switch result {
-            case .success():
+        Task {
+            guard let cloudService = cloudAuthService.getAuthorizedService() else {
+                print("Not logged")
+                return
+            }
+            
+            do {
+                try await cloudAuthService.logout(from: cloudService)
                 print("Logged out from \(cloudService.displayName)")
-            case .failure(let error):
-                print("Error: \(error.localizedDescription)")
+            } catch {
+                print("Logout error: \(error.localizedDescription)")
             }
         }
-        
     }
 }

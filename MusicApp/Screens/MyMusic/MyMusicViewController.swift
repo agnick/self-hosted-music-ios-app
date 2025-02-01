@@ -6,6 +6,8 @@
 //
 
 import UIKit
+import AVKit
+import AVFoundation
 
 final class MyMusicViewController: UIViewController {
     // MARK: - Enums
@@ -49,13 +51,19 @@ final class MyMusicViewController: UIViewController {
     }
     
     // MARK: - Variables
-    private let interactor: MyMusicBusinessLogic
+    private var interactor: (MyMusicBusinessLogic & MyMusicDataStore)
     private let viewFactory: MyMusicViewFactory
     
+    private var player: AVPlayer?
+    
     // UI components.
+    private var sortButton: UIBarButtonItem?
+    private var editButton: UIBarButtonItem?
     private let titleLabel: UILabel = UILabel()
     private let segmentedControl: UISegmentedControl = UISegmentedControl()
     private let searchBar: UISearchBar = UISearchBar(frame: .zero)
+    private var playButton: UIButton?
+    private var shuffleButton: UIButton?
     private let buttonStackView: UIStackView = UIStackView()
     private let audioTable: UITableView = UITableView(frame: .zero)
     private let activityIndicator: UIActivityIndicatorView = UIActivityIndicatorView(
@@ -63,7 +71,7 @@ final class MyMusicViewController: UIViewController {
     )
     
     // MARK: - Lifecycle
-    init(interactor: MyMusicBusinessLogic, viewFactory: MyMusicViewFactory) {
+    init(interactor: (MyMusicBusinessLogic & MyMusicDataStore), viewFactory: MyMusicViewFactory) {
         self.interactor = interactor
         self.viewFactory = viewFactory
         super.init(nibName: nil, bundle: nil)
@@ -79,13 +87,15 @@ final class MyMusicViewController: UIViewController {
         
         configureUI()
         interactor.loadStart(MyMusicModel.Start.Request())
+        
+        blockUI()
         activityIndicator.startAnimating()
-        interactor.fetchCloudAudioFiles(MyMusicModel.FetchedFiles.Request())
+        interactor.updateAudioFiles(for: 0)
     }
     
     // MARK: - Actions
     @objc private func sortButtonTapped() {
-        
+        showSortActionSheet()
     }
 
     @objc private func editButtonTapped() {
@@ -93,11 +103,26 @@ final class MyMusicViewController: UIViewController {
     }
     
     @objc private func segmentedControlChanged(_ sender: UISegmentedControl) {
-        if sender.selectedSegmentIndex == 0 {
-            print("Выбран облачный сервис")
-        } else {
-            print("Выбраны Скаченные")
+        blockUI()
+        interactor.currentAudioFiles.removeAll()
+        audioTable.reloadData()
+        
+        activityIndicator.startAnimating()
+        interactor.updateAudioFiles(for: sender.selectedSegmentIndex)
+    }
+    
+    @objc private func playButtonPressed() {
+        interactor.playInOrder(MyMusicModel.Play.Request())
+    }
+
+    @objc private func playerItemDidFailToPlay(_ notification: Notification) {
+        if let playerItem = notification.object as? AVPlayerItem, let error = playerItem.error {
+            print("AVPlayerItem error: \(error.localizedDescription)")
         }
+    }
+    
+    @objc private func shuffleButtonPressed() {
+        
     }
     
     // MARK: - Public methods
@@ -110,6 +135,8 @@ final class MyMusicViewController: UIViewController {
     ) {
         activityIndicator.stopAnimating()
         audioTable.reloadData()
+        
+        activateUI()
     }
     
     func displayError(
@@ -144,6 +171,9 @@ final class MyMusicViewController: UIViewController {
         
         let editButton = UIBarButtonItem(title: "Изменить", style: .plain, target: self, action: #selector(editButtonTapped))
         
+        self.sortButton = sortButton
+        self.editButton = editButton
+        
         navigationItem.leftBarButtonItem = sortButton
         navigationItem.rightBarButtonItem = editButton
     }
@@ -171,8 +201,12 @@ final class MyMusicViewController: UIViewController {
         searchBar.placeholder = "Искать в музыке"
         searchBar.searchBarStyle = .minimal
         searchBar.backgroundImage = UIImage()
+        searchBar.delegate = self
+        searchBar.showsCancelButton = true
         
         let textField = searchBar.searchTextField as UITextField
+        
+        textField.clearButtonMode = .never
         
         textField.pinLeft(to: searchBar.leadingAnchor, Constants.searchBarTextFieldMargin)
         textField.pinTop(to: searchBar.topAnchor, Constants.searchBarTextFieldMargin)
@@ -206,11 +240,16 @@ final class MyMusicViewController: UIViewController {
         buttonStackView.distribution = .fillEqually
         
         let playButton: UIButton = viewFactory.audioActionButton(with: UIImage(image: .icPlay), title: "Слушать", imagePadding: Constants.actionButtonImagePadding, fontSize: Constants.actionButtonFontSize)
-        let suffleButton: UIButton = viewFactory.audioActionButton(with: UIImage(image: .icShuffle), title: "Перемешать", imagePadding: Constants.actionButtonImagePadding, fontSize: Constants.actionButtonFontSize)
+        let shuffleButton: UIButton = viewFactory.audioActionButton(with: UIImage(image: .icShuffle), title: "Перемешать", imagePadding: Constants.actionButtonImagePadding, fontSize: Constants.actionButtonFontSize)
         
+        playButton.addTarget(self, action: #selector(playButtonPressed), for: .touchUpInside)
+        shuffleButton.addTarget(self, action: #selector(shuffleButtonPressed), for: .touchUpInside)
+        
+        self.playButton = playButton
+        self.shuffleButton = shuffleButton
         
         buttonStackView.addArrangedSubview(playButton)
-        buttonStackView.addArrangedSubview(suffleButton)
+        buttonStackView.addArrangedSubview(shuffleButton)
         
         buttonStackView.pinLeft(to: view, Constants.buttonStackViewLeading)
         buttonStackView.pinRight(to: view, Constants.buttonStackViewTrailing)
@@ -231,8 +270,8 @@ final class MyMusicViewController: UIViewController {
         // Register the cell class for reuse.
         audioTable
             .register(
-                AudioFilesCell.self,
-                forCellReuseIdentifier: AudioFilesCell.reuseId
+                FetchedAudioCell.self,
+                forCellReuseIdentifier: FetchedAudioCell.reuseId
             )
         
         audioTable.isScrollEnabled = true
@@ -281,23 +320,69 @@ final class MyMusicViewController: UIViewController {
         
         segmentedControl.selectedSegmentIndex = 0
     }
+    
+    private func blockUI() {
+        sortButton?.isEnabled = false
+        editButton?.isEnabled = false
+        
+        playButton?.isEnabled = false
+        shuffleButton?.isEnabled = false
+    }
+    
+    private func activateUI() {
+        sortButton?.isEnabled = true
+        editButton?.isEnabled = true
+        
+        playButton?.isEnabled = true
+        shuffleButton?.isEnabled = true
+    }
+    
+    private func showSortActionSheet() {
+        let alert = UIAlertController(title: "Выберите тип сортировки", message: nil, preferredStyle: .actionSheet)
+        
+        let titleAttributes = [NSAttributedString.Key.foregroundColor: UIColor(color: .primary)]
+        let attributedTitle = NSAttributedString(string: "Выберите тип сортировки", attributes: titleAttributes)
+        alert.setValue(attributedTitle, forKey: "attributedTitle")
+        
+        let actions: [(String, MyMusicModel.Sort.Request?)] = [
+            ("Исполнитель (А-я)", .init(sortType: .artistAscending)),
+            ("Исполнитель (я-А)", .init(sortType: .artistDescending)),
+            ("Название (А-я)", .init(sortType: .titleAscending)),
+            ("Название (я-А)", .init(sortType: .titleDescending)),
+            ("Длительность (дольше-короче)", .init(sortType: .durationDescending)),
+            ("Длительность (короче-дольше)", .init(sortType: .durationAscending)),
+            ("Отменить", nil)
+        ]
+        
+        for (title, request) in actions {
+            let action = UIAlertAction(title: title, style: request == nil ? .cancel : .default) { _ in
+                if let request = request {
+                    self.interactor.sortAudioFiles(request)
+                }
+            }
+            action.setValue(UIColor(color: .primary), forKey: "titleTextColor")
+            alert.addAction(action)
+        }
+        
+        present(alert, animated: true)
+    }
 }
 
 // MARK: - UITableViewDataSource
 extension MyMusicViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return interactor.getAudioFiles().count
+        return interactor.currentAudioFiles.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(
-            withIdentifier: AudioFilesCell.reuseId,
+            withIdentifier: FetchedAudioCell.reuseId,
             for: indexPath
-        ) as! AudioFilesCell
+        ) as! FetchedAudioCell
         
-        let audioFile = interactor.getAudioFiles()[indexPath.row]
+        let audioFile = interactor.currentAudioFiles[indexPath.row]
         
-        cell.configure(audioFile.name, audioFile.sizeInMB, isDownloading: audioFile.isDownloading)
+        cell.configure(audioFile.name, audioFile.artistName, String(audioFile.durationInSeconds))
         
         return cell
     }
@@ -314,5 +399,18 @@ extension MyMusicViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return Constants.audioTableRowHeight
+    }
+}
+
+// MARK: - UISearchBarDelegate
+extension MyMusicViewController: UISearchBarDelegate {
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        interactor.searchAudioFiles(MyMusicModel.Search.Request(query: searchText))
+    }
+    
+    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.text = ""
+        searchBar.resignFirstResponder()
+        interactor.searchAudioFiles(MyMusicModel.Search.Request(query: ""))
     }
 }

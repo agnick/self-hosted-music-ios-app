@@ -8,31 +8,27 @@
 import Foundation
 
 final class YandexCloudWorker: CloudWorkerProtocol {
+    func authorize() async throws {
+        throw NSError(domain: "YandexCloudWorker", code: 401, userInfo: [NSLocalizedDescriptionKey: "Authorization required"])
+    }
+    
+    func fetchAudio() async throws -> [AudioFile] {
+        return []
+    }
+    
+    func getAccessToken() async throws -> String {
+        return ""
+    }
+    
+    func reauthorize() async throws {
+        throw NSError(domain: "YandexCloudWorker", code: 401, userInfo: [NSLocalizedDescriptionKey: "User is not authorized"])
+    }
+    
+    func logout() async throws {
+        
+    }
+    
     func getDownloadRequest(urlstring: String) -> URLRequest? {
         return nil
-    }
-    
-    func getAccessToken() -> String? {
-        return nil
-    }
-    
-    func logout(completion: @escaping (Result<Void, any Error>) -> Void) {
-        
-    }
-    
-    func reauthorize(completion: @escaping (Result<Void, any Error>) -> Void) {
-        
-    }
-    
-    func getAccessToken(completion: @escaping (Result<String, any Error>) -> Void) {
-        
-    }
-    
-    func authorize(completion: @escaping (Result<Void, any Error>) -> Void) {
-        
-    }
-    
-    func fetchAudio(completion: @escaping (Result<[AudioFile], any Error>) -> Void) {
-        
     }
 }

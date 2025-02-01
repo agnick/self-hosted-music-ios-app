@@ -11,9 +11,11 @@ final class SettingsScreenPresenter: SettingsScreenPresentationLogic {
     weak var view: SettingsScreenViewController?
     
     func presentStart(_ request: SettingsScreenModel.Start.Response) {
-        let cloudServiceName = request.cloudService?.displayName ?? "No service"
-        
-        view?.displayStart(SettingsScreenModel.Start.ViewModel(cloudServiceName: cloudServiceName))
+        DispatchQueue.main.async {
+            let cloudServiceName = request.cloudService?.displayName ?? "No service"
+            
+            self.view?.displayStart(SettingsScreenModel.Start.ViewModel(cloudServiceName: cloudServiceName))
+        }
     }
     
     func routeTo() {

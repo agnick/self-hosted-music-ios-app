@@ -26,6 +26,6 @@ final class StartScreenPresenter: StartScreenPresentationLogic {
     
     func routeToSliderGuideScreen() {
         view?.navigationController?
-            .pushViewController(UIViewController(), animated: false)
+            .pushViewController(UIViewController(), animated: true)
     }
 }
