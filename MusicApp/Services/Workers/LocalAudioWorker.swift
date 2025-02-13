@@ -44,7 +44,8 @@ final class LocalAudioWorker {
                         sizeInMB: fileSize / (1024 * 1024),
                         durationInSeconds: durationInSeconds.isNaN ? 0 : durationInSeconds,
                         artistName: file.lastPathComponent,
-                        isDownloading: false
+                        isDownloading: false,
+                        source: .local
                     )
                     
                     audioFiles.append(audioFile)

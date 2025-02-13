@@ -9,7 +9,7 @@ import GoogleSignIn
 import GoogleAPIClientForREST
 import AVFoundation
 
-final class GoogleDriveWorker: CloudWorkerProtocol {
+final class GoogleDriveWorker: CloudWorker {
     // MARK: - Variables
     private var driveService = GTLRDriveService()
     
@@ -56,14 +56,6 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
                     }
             }
         }
-    }
-    
-    func getAccessToken() async throws -> String {
-        guard let accessToken = GIDSignIn.sharedInstance.currentUser?.authentication.accessToken else {
-            throw NSError(domain: "Token not found", code: 404)
-        }
-        
-        return accessToken
     }
     
     func reauthorize() async throws {
@@ -141,7 +133,8 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
                 url: url,
                 sizeInMB: fileSize / (1024 * 1024),
                 durationInSeconds: 0,
-                artistName: name
+                artistName: name,
+                source: .googleDrive
             )
             
             audioFiles.append(audioFile)
@@ -150,7 +143,15 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
         return audioFiles
     }
     
-    func getDownloadRequest(urlstring: String) -> URLRequest? {
+    func getAccessToken() async throws -> String {
+        guard let accessToken = GIDSignIn.sharedInstance.currentUser?.authentication.accessToken else {
+            throw NSError(domain: "Token not found", code: 404)
+        }
+        
+        return accessToken
+    }
+    
+    func getDownloadRequest(urlstring: String) async -> URLRequest? {
         let fileId = extractFileId(
             from: urlstring
         )
@@ -163,7 +164,7 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
         let apiUrl = "https://www.googleapis.com/drive/v3/files/\(fileId)?alt=media"
         var request = URLRequest(url: URL(string: apiUrl)!)
         
-        if let accessToken = getAccessToken() {
+        if let accessToken = try? await getAccessToken() {
             request
                 .addValue(
                     "Bearer \(accessToken)",
@@ -175,11 +176,7 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
     }
     
     // MARK: - Private methods
-    private func getAccessToken() -> String? {
-        return GIDSignIn.sharedInstance.currentUser?.authentication.accessToken
-    }
-    
-    private func extractFileId(from url: String) -> String? {
+    func extractFileId(from url: String) -> String? {
         let regex = try! NSRegularExpression(
             pattern: "id=([a-zA-Z0-9_-]+)",
             options: []

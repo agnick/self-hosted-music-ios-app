@@ -7,12 +7,11 @@
 
 import Foundation
 
-protocol CloudWorkerProtocol {
+protocol CloudWorker {
     func authorize() async throws
-    func fetchAudio() async throws -> [AudioFile]
-    func getAccessToken() async throws -> String
     func reauthorize() async throws
     func logout() async throws
-    
-    func getDownloadRequest(urlstring: String) -> URLRequest?
+    func fetchAudio() async throws -> [AudioFile]
+    func getDownloadRequest(urlstring: String) async -> URLRequest?
+    func getAccessToken() async throws -> String
 }

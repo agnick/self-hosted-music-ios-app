@@ -72,11 +72,15 @@ final class TabViewController: UITabBarController {
 }
 
 extension TabViewController: MiniPlayerViewDelegate {
+    func miniPlayerNextTrackTapped(_ miniPlayerView: MiniPlayerView) {
+        AudioPlayer.shared.playNextTrack()
+    }
+    
     func miniPlayerViewDidTap(_ miniPlayerView: MiniPlayerView) {
         
     }
     
     func miniPlayerPlayPauseTapped(_ miniPlayerVie: MiniPlayerView) {
-        AudioPlayerManager.shared.togglePlayPause()
+        AudioPlayer.shared.togglePlayPause()
     }
 }

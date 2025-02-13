@@ -45,7 +45,7 @@ final class StartScreenViewController: UIViewController {
         configureUI()
         
         // Calling interactor to switch to the slider guide or main screen.
-        interactor.determineNavigationDestination(StartScreenModel.NavigationDestination.Request())
+        interactor.determineNavigationDestination()
     }
     
     // MARK: - Private methods

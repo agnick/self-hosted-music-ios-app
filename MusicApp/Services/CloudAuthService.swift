@@ -28,6 +28,10 @@ struct CloudAuthService {
         return cloudAuth.isAuthorized(for: service)
     }
     
+    func getWorker(for service: CloudServiceType) -> CloudWorker? {
+        return cloudAuth.getWorker(for: service)
+    }
+    
     func getAuthorizedService() -> CloudServiceType? {
         return cloudAuth.getAuthorizedService()
     }
@@ -40,14 +44,17 @@ final class CloudAuth {
     
     // MARK: - Variables
     private var authorizedService: CloudServiceType?
-    private let cloudWorkerService: CloudWorkerService = CloudWorkerService()
+    private let workers: [CloudServiceType: CloudWorker] = [
+        .googleDrive: GoogleDriveWorker(),
+        .yandexCloud: YandexCloudWorker(),
+    ]
     
     // MARK: - Lifecycle
     private init() {}
     
     // MARK: - Authorization methods
     func authorize(for service: CloudServiceType) async throws {
-        guard let worker = cloudWorkerService.getWorker(for: service) else {
+        guard let worker = workers[service] else {
             throw NSError(domain: "Worker not found", code: 404)
         }
         
@@ -60,7 +67,7 @@ final class CloudAuth {
     }
     
     func reauthorize(for service: CloudServiceType) async throws {
-        guard let worker = cloudWorkerService.getWorker(for: service) else {
+        guard let worker = workers[service] else {
             throw NSError(domain: "Worker not found", code: 404)
         }
         
@@ -73,7 +80,7 @@ final class CloudAuth {
     }
     
     func logout(from service: CloudServiceType) async throws {
-        guard let worker = cloudWorkerService.getWorker(for: service) else {
+        guard let worker = workers[service] else {
             throw NSError(domain: "Worker not found", code: 404)
         }
         
@@ -84,6 +91,10 @@ final class CloudAuth {
     // MARK: - Utility methods
     func isAuthorized(for service: CloudServiceType) -> Bool {
         return authorizedService == service
+    }
+    
+    func getWorker(for service: CloudServiceType) -> CloudWorker? {
+        return workers[service]
     }
     
     func getAuthorizedService() -> CloudServiceType? {

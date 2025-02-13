@@ -112,17 +112,11 @@ final class MyMusicViewController: UIViewController {
     }
     
     @objc private func playButtonPressed() {
-        interactor.playInOrder(MyMusicModel.Play.Request())
-    }
-
-    @objc private func playerItemDidFailToPlay(_ notification: Notification) {
-        if let playerItem = notification.object as? AVPlayerItem, let error = playerItem.error {
-            print("AVPlayerItem error: \(error.localizedDescription)")
-        }
+        interactor.playInOrder()
     }
     
     @objc private func shuffleButtonPressed() {
-        
+        interactor.playShuffle()
     }
     
     // MARK: - Public methods
@@ -382,7 +376,7 @@ extension MyMusicViewController: UITableViewDataSource {
         
         let audioFile = interactor.currentAudioFiles[indexPath.row]
         
-        cell.configure(audioFile.name, audioFile.artistName, String(audioFile.durationInSeconds))
+        cell.configure(audioFile.name, audioFile.artistName, audioFile.durationInSeconds)
         
         return cell
     }
@@ -394,7 +388,7 @@ extension MyMusicViewController: UITableViewDelegate {
         _ tableView: UITableView,
         didSelectRowAt indexPath: IndexPath
     ) {
-        
+        interactor.playSelectedTrack(MyMusicModel.Play.Request(index: indexPath.row))
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

@@ -7,47 +7,23 @@
 
 import Foundation
 
-// MARK: - CloudAudioService
-struct CloudAudioService {
-    private let cloudAudio = CloudAudio.shared
-    
-    // MARK: - Public methods
-    func fetchAudioFiles(for service: CloudServiceType, forceRefresh: Bool = false) async throws -> [AudioFile] {
-        return try await cloudAudio.fetchFiles(for: service, forceRefresh: forceRefresh)
-    }
-    
-    func downloadAudioFile(for service: CloudServiceType, urlstring: String, fileName: String) async throws -> URL {
-        return try await cloudAudio.downloadAudioFile(for: service, urlstring: urlstring, fileName: fileName)
-    }
-    
-    func setDownloadingState(for rowIndex: Int, isDownloading: Bool) {
-        return cloudAudio.setDownloadingState(for: rowIndex, isDownloading: isDownloading)
-    }
-    
-    func getAudioFiles() -> [AudioFile] {
-        return cloudAudio.getAudioFiles()
-    }
-}
-
 // MARK: - CloudAudio
-final class CloudAudio {
-    static let shared: CloudAudio = CloudAudio()
-    
+final class CloudAudioService {
     // MARK: - Variables
     private var audioFiles: [AudioFile] = []
-    private let cloudAuthService: CloudAuthService = CloudAuthService()
-    private let cloudWorkerService: CloudWorkerService = CloudWorkerService()
-        
+    private let cloudAuthService: CloudAuthService
+    
     // MARK: - Lifecycle
-    private init() {
+    init(cloudAuthService: CloudAuthService) {
+        self.cloudAuthService = cloudAuthService
     }
     
     // MARK: - File Fetching
-    func fetchFiles(
+    func fetchAudioFiles(
         for service: CloudServiceType,
         forceRefresh: Bool = false
     ) async throws -> [AudioFile] {
-        guard let worker = cloudWorkerService.getWorker(for: service) else {
+        guard let worker = cloudAuthService.getWorker(for: service) else {
             throw NSError(domain: "Worker not found", code: 404)
         }
         
@@ -65,11 +41,11 @@ final class CloudAudio {
     }
     
     func downloadAudioFile(for service: CloudServiceType, urlstring: String, fileName: String) async throws -> URL {
-        guard let worker = cloudWorkerService.getWorker(for: service) else {
+        guard let worker = cloudAuthService.getWorker(for: service) else {
             throw NSError(domain: "Worker not found", code: 404)
         }
         
-        guard var request = worker.getDownloadRequest(urlstring: urlstring) else {
+        guard var request = await worker.getDownloadRequest(urlstring: urlstring) else {
             throw NSError(domain: "Invalid download URL", code: 400, userInfo: nil)
         }
         
@@ -118,7 +94,7 @@ final class CloudAudio {
             throw error
         }
     }
-    
+        
     // MARK: - Utility Methods
     func setDownloadingState(for rowIndex: Int, isDownloading: Bool) {
         if rowIndex < audioFiles.count {

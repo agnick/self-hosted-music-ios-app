@@ -35,7 +35,7 @@ final class FetchedAudioCell: UITableViewCell {
         // audioDuration settings.
         static let audioDurationFontSize: CGFloat = 12
         static let audioDurationRight: CGFloat = 20
-        static let audioDurationWidth: CGFloat = 10
+        static let audioDurationWidth: CGFloat = 30
         
         // downloadButton settings
         static let meatballsMenuHeight: CGFloat = 30
@@ -78,11 +78,11 @@ final class FetchedAudioCell: UITableViewCell {
     }
     
     // MARK: - Public Methods
-    func configure(img: UIImage = UIImage(image: .icAudioImg), _ audioName: String, _ artistName: String, _ duration: String) {
+    func configure(img: UIImage = UIImage(image: .icAudioImg), _ audioName: String, _ artistName: String, _ duration: Double) {
         audioImg.image = img
         audioNameLabel.text = audioName
         artistNameLabel.text = artistName
-        audioDuration.text = duration
+        audioDuration.text = formatDuration(duration)
     }
     
     // MARK: - Private Methods
@@ -182,5 +182,13 @@ final class FetchedAudioCell: UITableViewCell {
         meatballsMenu.pinCenterY(to: wrap)
         
         meatballsMenu.addTarget(self, action: #selector(meatballsMenuTapped), for: .touchUpInside)
+    }
+    
+    private func formatDuration(_ duration: Double) -> String {
+        let totalSeconds = Int(round(duration))
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        
+        return "\(minutes):\(String(format: "%02d", seconds))"
     }
 }

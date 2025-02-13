@@ -12,7 +12,10 @@ protocol MyMusicBusinessLogic {
     func updateAudioFiles(for segmentIndex: Int)
     func sortAudioFiles(_ request: MyMusicModel.Sort.Request)
     func searchAudioFiles(_ request: MyMusicModel.Search.Request)
-    func playInOrder(_ request: MyMusicModel.Play.Request)
+    func playSelectedTrack(_ request: MyMusicModel.Play.Request)
+    func playInOrder()
+    func playShuffle()
+    func playNextTrack()
 }
 
 protocol MyMusicDataStore {

@@ -56,6 +56,7 @@ enum MyMusicModel {
     
     enum Play {
         struct Request {
+            let index: Int
         }
         
         struct Response {

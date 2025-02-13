@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class YandexCloudWorker: CloudWorkerProtocol {
+final class YandexCloudWorker: CloudWorker {
     func authorize() async throws {
         throw NSError(domain: "YandexCloudWorker", code: 401, userInfo: [NSLocalizedDescriptionKey: "Authorization required"])
     }

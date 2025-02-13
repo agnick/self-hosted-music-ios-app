@@ -6,7 +6,7 @@
 //
 
 protocol StartScreenBusinessLogic {
-    func determineNavigationDestination(_ request: StartScreenModel.NavigationDestination.Request)
+    func determineNavigationDestination()
 }
 
 protocol StartScreenWorkerLogic {

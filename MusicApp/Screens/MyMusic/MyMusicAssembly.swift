@@ -11,7 +11,7 @@ enum MyMusicAssembly {
     static func build() -> UIViewController {
         let presenter = MyMusicPresenter()
         let cloudAuthService = CloudAuthService()
-        let cloudAudioService = CloudAudioService()
+        let cloudAudioService = CloudAudioService(cloudAuthService: cloudAuthService)
         let localAudioService = LocalAudioService()
         let audioPlayerService = AudioPlayerService()
         let worker = MyMusicWorker()

@@ -9,8 +9,8 @@ import UIKit
 
 protocol MiniPlayerViewDelegate: AnyObject {
     func miniPlayerViewDidTap(_ miniPlayerView: MiniPlayerView)
-    
     func miniPlayerPlayPauseTapped(_ miniPlayerVie: MiniPlayerView)
+    func miniPlayerNextTrackTapped(_ miniPlayerView: MiniPlayerView)
 }
 
 final class MiniPlayerView: UIView {
@@ -78,6 +78,8 @@ final class MiniPlayerView: UIView {
         if let track = notification.object as? AudioFile {
             trackTitle.text = track.name
             artistName.text = track.artistName
+            updatePlayPauseBtn()
+            isHidden = false
         }
     }
     
@@ -92,7 +94,7 @@ final class MiniPlayerView: UIView {
     }
     
     @objc private func nextTrackBtnTapped() {
-        // logic
+        delegate?.miniPlayerNextTrackTapped(self)
     }
     
     @objc private func viewTapped() {
@@ -102,6 +104,8 @@ final class MiniPlayerView: UIView {
     // MARK: - Private methods
     private func configureUI() {
         backgroundColor = UIColor(color: .miniPlayerColor)
+        
+        isHidden = true
         
         configureTrackImg()
         configureBtnStack()

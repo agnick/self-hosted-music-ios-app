@@ -117,15 +117,61 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
         presenter.presentAudioFiles(MyMusicModel.FetchedFiles.Response(audioFiles: currentAudioFiles))
     }
     
-    func playInOrder(_ request: MyMusicModel.Play.Request) {
-        guard let firstAudioFile = currentAudioFiles.first else { return }
-        
-        print("Playing: \(firstAudioFile.name)")
-        
+    func playInOrder() {
+        guard
+            let firstAudioFile = currentAudioFiles.first
+        else {
+            return
+        }
+                
         playTrack(audioFile: firstAudioFile)
     }
     
+    func playShuffle() {
+        guard !currentAudioFiles.isEmpty else { return }
+        
+        var shuffledPlaylist = currentAudioFiles
+        shuffledPlaylist.shuffle()
+        
+        audioPlayerService.play(audioFile: shuffledPlaylist[0], playlist: shuffledPlaylist)
+    }
+    
+    func playNextTrack() {
+        audioPlayerService.playNextTrack()
+    }
+    
+    func playSelectedTrack(_ request: MyMusicModel.Play.Request) {
+        let selectedTrack = currentAudioFiles[request.index]
+        
+        playTrack(audioFile: selectedTrack)
+    }
+    
+    private func getPlayableUrl(for audioFile: AudioFile) -> URL? {
+        switch audioFile.source {
+        case .local:
+            return audioFile.url
+        case .googleDrive:
+            return audioFile.url
+        }
+    }
+    
     private func playTrack(audioFile: AudioFile) {
-        audioPlayerService.play(audioFile: audioFile)
+        guard
+            let playableUrl = getPlayableUrl(for: audioFile)
+        else {
+            presenter.presentError(MyMusicModel.Error.Response(error: NSError(domain: "PlaybackError", code: 1001, userInfo: [NSLocalizedDescriptionKey: "Не удалось получить URL для воспроизведения."])))
+            return
+        }
+        
+        let playableAudioFile = AudioFile(
+            name: audioFile.name,
+            url: playableUrl,
+            sizeInMB: audioFile.sizeInMB,
+            durationInSeconds: audioFile.durationInSeconds,
+            artistName: audioFile.artistName,
+            source: audioFile.source
+        )
+        
+        audioPlayerService.play(audioFile: playableAudioFile, playlist: currentAudioFiles)
     }
 }
