@@ -23,6 +23,7 @@ enum Image: String {
     case icShuffle = "ic-shuffle"
     case icMeatballsMenu = "ic-meatballs-menu"
     case icNextTrack = "ic-next-track"
+    case icCheck = "ic-check"
 }
 
 extension UIImage {

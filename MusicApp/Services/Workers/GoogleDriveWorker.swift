@@ -132,7 +132,7 @@ final class GoogleDriveWorker: CloudWorker {
                 name: name,
                 url: url,
                 sizeInMB: fileSize / (1024 * 1024),
-                durationInSeconds: 0,
+                durationInSeconds: nil,
                 artistName: name,
                 source: .googleDrive
             )

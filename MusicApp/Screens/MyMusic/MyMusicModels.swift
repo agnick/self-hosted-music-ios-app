@@ -27,6 +27,7 @@ enum MyMusicModel {
         
         struct ViewModel {
             let audioFilesCount: Int
+            let buttonsState: Bool
         }
     }
     
@@ -63,6 +64,155 @@ enum MyMusicModel {
         }
         
         struct ViewModel {
+        }
+    }
+    
+    enum UpdateAudio {
+        struct Request {
+            let selectedSegmentIndex: Int
+        }
+        
+        struct Response {
+        }
+        
+        struct ViewModel {
+        }
+    }
+    
+    enum Delete {
+        struct Request {
+            let selectedSegmentIndex: Int
+        }
+        
+        struct Response {
+        }
+        
+        struct ViewModel {
+        }
+    }
+    
+    enum Edit {
+        struct Request {
+        }
+        
+        struct Response {
+            let isEditingMode: Bool
+        }
+        
+        struct ViewModel {
+            let isEditingMode: Bool
+        }
+    }
+    
+    enum PickTracks {
+        struct Request {
+        }
+        
+        struct Response {
+            let state: Bool
+        }
+        
+        struct ViewModel {
+            let buttonTitle: String
+        }
+    }
+    
+    enum PreLoading {
+        struct Request {
+        }
+        
+        struct Response {
+        }
+        
+        struct ViewModel {
+            let buttonsState: Bool
+        }
+    }
+    
+    enum SortOptions {
+        struct Request {
+        }
+        
+        struct Response {
+        }
+        
+        struct ViewModel {
+            let sortOptions: [SortOption]
+        }
+        
+        struct SortOption {
+            let title: String
+            let request: MyMusicModel.Sort.Request?
+            let isCancel: Bool
+            
+            init(title: String, request: MyMusicModel.Sort.Request?, isCancel: Bool) {
+                self.title = title
+                self.request = request
+                self.isCancel = isCancel
+            }
+        }
+    }
+    
+    enum CellData {
+        struct Request {
+            let index: Int
+        }
+        
+        struct Response {
+            let index: Int
+            let isEditingMode: Bool
+            let isSelected: Bool
+            let audioFile: AudioFile
+        }
+        
+        struct ViewModel {
+            let index: Int
+            let isEditingMode: Bool
+            let isSelected: Bool
+            let name: String
+            let artistName: String
+            let durationInSeconds: Double?
+        }
+    }
+    
+    enum CanMoveTrack {
+        struct Request {
+            let index: Int
+        }
+        
+        struct Response {
+            let canMove: Bool
+        }
+        
+        struct ViewModel {
+            let canMove: Bool
+        }
+    }
+    
+    enum MoveTrack {
+        struct Request {
+            let sourceIndex: Int
+            let destinationIndex: Int
+        }
+        
+        struct Response {
+        }
+        
+        struct ViewModel {
+        }
+    }
+    
+    enum TrackSelection {
+        struct Request {
+            let index: Int
+        }
+        
+        struct Response {
+            let index: Int
+        }
+        
+        struct ViewModel {
+            let index: Int
         }
     }
     

@@ -40,6 +40,23 @@
 	</array>
     <key>LSApplicationQueriesSchemes</key>
     <array>
+        <string>yandexauth</string>
+        <string>yandexauth2</string>
+        <string>yandexauth4</string>
+    </array>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>YandexLoginSDK</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>yx6f335125c3f94053886fc5aa01177a41</string>
+            </array>
+        </dict>
+    </array>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
         <string>primaryyandexloginsdk</string>
         <string>secondaryyandexloginsdk</string>
     </array>

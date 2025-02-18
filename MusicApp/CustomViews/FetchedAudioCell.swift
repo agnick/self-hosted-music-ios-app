@@ -7,6 +7,10 @@
 
 import UIKit
 
+protocol FetchedAudioCellDelegate: AnyObject {
+    func didTapCheckBox(in cell: FetchedAudioCell)
+}
+
 final class FetchedAudioCell: UITableViewCell {
     // MARK: - Enums
     enum Constants {
@@ -14,6 +18,12 @@ final class FetchedAudioCell: UITableViewCell {
         static let wrapLayerCornerRadius: CGFloat = 10
         static let wrapOffsetV: CGFloat = 5
         static let wrapOffsetH: CGFloat = 0
+        static let wrapEditingLeading: CGFloat = 5
+        
+        // checkBox settings.
+        static let checkBoxLeft: CGFloat = 10
+        static let checkBoxWidth: CGFloat = 30
+        static let checkBoxHeight: CGFloat = 30
         
         // audioImg settings.
         static let audioImgLeading: CGFloat = 15
@@ -51,10 +61,16 @@ final class FetchedAudioCell: UITableViewCell {
     
     // UI Components.
     private let audioImg: UIImageView = UIImageView()
+    private let checkBox: UIImageView = UIImageView()
     private let audioNameLabel: UILabel = UILabel()
     private let artistNameLabel: UILabel = UILabel()
     private let audioDuration: UILabel = UILabel()
     private let meatballsMenu: UIButton = UIButton(type: .system)
+    private let wrap: UIView = UIView()
+    
+    private var wrapLeftConstraint: NSLayoutConstraint!
+    
+    weak var delegate: FetchedAudioCellDelegate?
     
     // MARK: - Lifecycle
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -77,12 +93,30 @@ final class FetchedAudioCell: UITableViewCell {
         
     }
     
+    @objc private func checkBoxTapped() {
+        delegate?.didTapCheckBox(in: self)
+    }
+    
     // MARK: - Public Methods
-    func configure(img: UIImage = UIImage(image: .icAudioImg), _ audioName: String, _ artistName: String, _ duration: Double) {
+    func configure(isEditingMode: Bool, isSelected: Bool, img: UIImage = UIImage(image: .icAudioImg), audioName: String, artistName: String, duration: Double?) {
         audioImg.image = img
         audioNameLabel.text = audioName
         artistNameLabel.text = artistName
-        audioDuration.text = formatDuration(duration)
+        
+        audioDuration.text = formatDuration(duration) ?? ""
+        
+        checkBox.isHidden = !isEditingMode
+        checkBox.image = isSelected ? UIImage(systemName: "checkmark.circle.fill") : UIImage(systemName: "circle")
+        
+        if isEditingMode {
+            wrapLeftConstraint.constant = checkBox.frame.maxX + Constants.wrapEditingLeading
+            meatballsMenu.isHidden = true
+        } else {
+            wrapLeftConstraint.constant = Constants.wrapOffsetH
+            meatballsMenu.isHidden = false
+        }
+        
+        layoutIfNeeded()
     }
     
     // MARK: - Private Methods
@@ -91,7 +125,32 @@ final class FetchedAudioCell: UITableViewCell {
         contentView.backgroundColor = .clear
         backgroundColor = .clear
         
-        let wrap: UIView = UIView()
+        configureCheckBox()
+        configureWrap()
+        configureImportOptionImg()
+        configureMeatballsMenu()
+        configureAudioDuration()
+        configureImportOptionTitle()
+        configureArtistNameLabel()
+    }
+    
+    private func configureCheckBox() {
+        addSubview(checkBox)
+        checkBox.contentMode = .scaleAspectFit
+        checkBox.tintColor = UIColor(color: .primary)
+        checkBox.isHidden = true
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(checkBoxTapped))
+        checkBox.isUserInteractionEnabled = true
+        checkBox.addGestureRecognizer(tapGesture)
+        
+        checkBox.pinLeft(to: self)
+        checkBox.pinCenterY(to: self)
+        checkBox.setWidth(Constants.checkBoxWidth)
+        checkBox.setHeight(Constants.checkBoxHeight)
+    }
+    
+    private func configureWrap() {
         addSubview(wrap)
         
         // Wrap settings.
@@ -101,17 +160,12 @@ final class FetchedAudioCell: UITableViewCell {
         
         // Wrap constraints.
         wrap.pinVertical(to: self, Constants.wrapOffsetV)
-        wrap.pinHorizontal(to: self, Constants.wrapOffsetH)
+        wrap.pinRight(to: self, Constants.wrapOffsetH)
         
-        // Configure other UI components.
-        configureImportOptionImg(wrap)
-        configureMeatballsMenu(wrap)
-        configureAudioDuration(wrap)
-        configureImportOptionTitle(wrap)
-        configureArtistNameLabel(wrap)
+        wrapLeftConstraint = wrap.pinLeft(to: self, Constants.wrapOffsetH)
     }
     
-    private func configureImportOptionImg(_ wrap: UIView) {
+    private func configureImportOptionImg() {
         wrap.addSubview(audioImg)
         
         // Image settings.
@@ -125,7 +179,7 @@ final class FetchedAudioCell: UITableViewCell {
         audioImg.setHeight(Constants.audioImgHeight)
     }
     
-    private func configureImportOptionTitle(_ wrap: UIView) {
+    private func configureImportOptionTitle() {
         wrap.addSubview(audioNameLabel)
         
         // Title settings.
@@ -140,7 +194,7 @@ final class FetchedAudioCell: UITableViewCell {
         audioNameLabel.pinTop(to: audioImg.topAnchor)
     }
     
-    private func configureArtistNameLabel(_ wrap: UIView) {
+    private func configureArtistNameLabel() {
         wrap.addSubview(artistNameLabel)
         
         // Title settings.
@@ -155,7 +209,7 @@ final class FetchedAudioCell: UITableViewCell {
         artistNameLabel.pinBottom(to: audioImg.bottomAnchor)
     }
     
-    private func configureAudioDuration(_ wrap: UIView) {
+    private func configureAudioDuration() {
         wrap.addSubview(audioDuration)
         
         // Title settings.
@@ -168,7 +222,7 @@ final class FetchedAudioCell: UITableViewCell {
         audioDuration.setWidth(Constants.audioDurationWidth)
     }
     
-    private func configureMeatballsMenu(_ wrap: UIView) {
+    private func configureMeatballsMenu() {
         wrap.addSubview(meatballsMenu)
         
         meatballsMenu.setImage(UIImage(image: .icMeatballsMenu), for: .normal)
@@ -184,7 +238,11 @@ final class FetchedAudioCell: UITableViewCell {
         meatballsMenu.addTarget(self, action: #selector(meatballsMenuTapped), for: .touchUpInside)
     }
     
-    private func formatDuration(_ duration: Double) -> String {
+    private func formatDuration(_ duration: Double?) -> String? {
+        guard let duration = duration else {
+            return nil
+        }
+        
         let totalSeconds = Int(round(duration))
         let minutes = totalSeconds / 60
         let seconds = totalSeconds % 60

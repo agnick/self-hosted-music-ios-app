@@ -12,7 +12,7 @@ import AVFoundation
 final class MyMusicViewController: UIViewController {
     // MARK: - Enums
     enum Constants {
-        // TitleLabel settings.
+        // titleLabel settings.
         static let titleLabelFontSize: CGFloat = 32
         static let titleLabelTop: CGFloat = 100
         static let titleLabelLeading: CGFloat = 20
@@ -20,6 +20,8 @@ final class MyMusicViewController: UIViewController {
         // segmentedControl settings.
         static let segmentedControlTop: CGFloat = 20
         static let segmentedControlLeading: CGFloat = 20
+        static let defaultSegment: Int = 0
+        static let secondarySegment: Int = 1
         
         // searchBar settings.
         static let searchBarTop: CGFloat = 20
@@ -28,9 +30,14 @@ final class MyMusicViewController: UIViewController {
         static let searchBarHeight: CGFloat = 35
         static let searchBarTextFieldMargin: CGFloat = 0
         
-        // ActionButton settings.
+        // actionButton settings.
         static let actionButtonImagePadding: CGFloat = 5
         static let actionButtonFontSize: CGFloat = 16
+        
+        // pickAllButton settings.
+        static let pickAllButtonOffsetX: CGFloat = 20
+        static let pickAllButtonTop: CGFloat = 10
+        static let pickAllButtonHeight: CGFloat = 45
         
         // buttonStackView settings.
         static let buttonStackViewSpacing: CGFloat = 15
@@ -51,19 +58,25 @@ final class MyMusicViewController: UIViewController {
     }
     
     // MARK: - Variables
+    // MyMusic screen interactor, it contains all bussiness logic.
     private var interactor: (MyMusicBusinessLogic & MyMusicDataStore)
+    // View factory for MyMusicViewController.
     private let viewFactory: MyMusicViewFactory
-    
-    private var player: AVPlayer?
-    
-    // UI components.
+    // State for tracking whether the view is in editing mode.
+    private var isMoveEnabled: Bool = false
+        
+    /* UI components */
+    // Buttons.
     private var sortButton: UIBarButtonItem?
     private var editButton: UIBarButtonItem?
-    private let titleLabel: UILabel = UILabel()
-    private let segmentedControl: UISegmentedControl = UISegmentedControl()
-    private let searchBar: UISearchBar = UISearchBar(frame: .zero)
     private var playButton: UIButton?
     private var shuffleButton: UIButton?
+    private var pickAllButton: UIButton?
+    // Labels.
+    private let titleLabel: UILabel = UILabel()
+    // Other components.
+    private let segmentedControl: UISegmentedControl = UISegmentedControl()
+    private let searchBar: UISearchBar = UISearchBar(frame: .zero)
     private let buttonStackView: UIStackView = UIStackView()
     private let audioTable: UITableView = UITableView(frame: .zero)
     private let activityIndicator: UIActivityIndicatorView = UIActivityIndicatorView(
@@ -85,39 +98,50 @@ final class MyMusicViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // Configure all UI elements and layout.
         configureUI()
+        
+        // Load initial data about the connected cloud service.
         interactor.loadStart(MyMusicModel.Start.Request())
         
-        blockUI()
-        activityIndicator.startAnimating()
-        interactor.updateAudioFiles(for: 0)
+        // Fetch and update audio files for the first segment (default selection).
+        interactor.updateAudioFiles(MyMusicModel.UpdateAudio.Request(selectedSegmentIndex: Constants.defaultSegment))
     }
     
-    // MARK: - Actions
+    // MARK: - Tab bar actions
     @objc private func sortButtonTapped() {
-        showSortActionSheet()
+        // Showing sort action sheet.
+        interactor.loadSortOptions()
     }
 
     @objc private func editButtonTapped() {
-        
+        interactor.loadEdit(MyMusicModel.Edit.Request())
     }
     
+    @objc private func deleteSelectedTracks() {
+        interactor.deleteTracks(MyMusicModel.Delete.Request(selectedSegmentIndex: segmentedControl.selectedSegmentIndex))
+    }
+    
+    // MARK: - Segment action
     @objc private func segmentedControlChanged(_ sender: UISegmentedControl) {
-        blockUI()
-        interactor.currentAudioFiles.removeAll()
-        audioTable.reloadData()
-        
-        activityIndicator.startAnimating()
-        interactor.updateAudioFiles(for: sender.selectedSegmentIndex)
+        interactor.updateAudioFiles(MyMusicModel.UpdateAudio.Request(selectedSegmentIndex: segmentedControl.selectedSegmentIndex))
     }
     
+    // MARK: - Player actions
     @objc private func playButtonPressed() {
+        // Request interactor to play audio tracks sequentially.
         interactor.playInOrder()
     }
     
     @objc private func shuffleButtonPressed() {
+        // Request interactor to shuffle the playlist and start playback.
         interactor.playShuffle()
     }
+    
+    @objc private func pickAllButtonPressed() {
+        interactor.pickAll(MyMusicModel.PickTracks.Request())
+    }
+    
     
     // MARK: - Public methods
     func displayStart(_ viewModel: MyMusicModel.Start.ViewModel) {
@@ -130,7 +154,59 @@ final class MyMusicViewController: UIViewController {
         activityIndicator.stopAnimating()
         audioTable.reloadData()
         
-        activateUI()
+        activateButtons(viewModel.buttonsState)
+        
+        // TODO: set tracks count
+    }
+    
+    func displayPreLoading(_ viewModel: MyMusicModel.PreLoading.ViewModel) {
+        // Block UI interactions while loading new audio files.
+        activateButtons(viewModel.buttonsState)
+        
+        // Reload the table view to reflect the cleared state.
+        audioTable.reloadData()
+        
+        // Start the activity indicator to show loading progress.
+        activityIndicator.startAnimating()
+    }
+    
+    func displayEdit(_ viewModel: MyMusicModel.Edit.ViewModel) {
+        // Enable or disable table view editing based on the new editing mode state.
+        audioTable.setEditing(viewModel.isEditingMode, animated: true)
+        // Reload the table to reflect changes in UI.
+        audioTable.reloadData()
+        
+        // Disable segmented control while in editing mode to prevent switching lists.
+        segmentedControl.isEnabled = !viewModel.isEditingMode
+        
+        // Update UI elements based on the editing mode state.
+        updateEditingModeUI(viewModel.isEditingMode)
+    }
+    
+    func displayPickAll(_ viewModel: MyMusicModel.PickTracks.ViewModel) {
+        pickAllButton?.setTitle(viewModel.buttonTitle, for: .normal)
+        audioTable.reloadSections(IndexSet(integer: 0), with: .none)
+    }
+    
+    func displaySortOptions(_ viewModel: MyMusicModel.SortOptions.ViewModel) {
+        let alert = UIAlertController(title: "Выберите тип сортировки", message: nil, preferredStyle: .actionSheet)
+        
+        let titleAttributes = [NSAttributedString.Key.foregroundColor: UIColor(color: .primary)]
+        let attributedTitle = NSAttributedString(string: "Выберите тип сортировки", attributes: titleAttributes)
+        alert.setValue(attributedTitle, forKey: "attributedTitle")
+        
+        for option in viewModel.sortOptions {
+            let action = UIAlertAction(title: option.title, style: option.isCancel ? .cancel : .default) { _ in
+                if let request = option.request {
+                    self.interactor.sortAudioFiles(request)
+                }
+            }
+            
+            action.setValue(UIColor(color: .primary), forKey: "titleTextColor")
+            alert.addAction(action)
+        }
+        
+        present(alert, animated: true)
     }
     
     func displayError(
@@ -145,7 +221,26 @@ final class MyMusicViewController: UIViewController {
         )
     }
     
-    // MARK: - Private methods
+    func displayCellData(_ viewModel: MyMusicModel.CellData.ViewModel) {
+        guard let cell = audioTable.cellForRow(at: IndexPath(row: viewModel.index, section: 0)) as? FetchedAudioCell else { return }
+        
+        cell.configure(isEditingMode: viewModel.isEditingMode, isSelected: viewModel.isSelected, audioName: viewModel.name, artistName: viewModel.artistName, duration: viewModel.durationInSeconds)
+    }
+    
+    func displayCanMoveTrack(_ viewModel: MyMusicModel.CanMoveTrack.ViewModel) {
+        isMoveEnabled = viewModel.canMove
+    }
+    
+    func displayMoveTrack() {
+        audioTable.reloadData()
+    }
+    
+    func displayTrackSelection(_ viewModel: MyMusicModel.TrackSelection.ViewModel) {
+        let indexPath = IndexPath(row: viewModel.index, section: 0)
+        audioTable.reloadRows(at: [indexPath], with: .automatic)
+    }
+    
+    // MARK: - Private methods for UI configuring
     private func configureUI() {
         view.backgroundColor = UIColor(color: .background)
         
@@ -153,6 +248,7 @@ final class MyMusicViewController: UIViewController {
         configureTitleLabel()
         configureSegmentedControl()
         configureSearchBar()
+        configurePickAllBurron()
         configureButtonStack()
         configureAudioTable()
         configureActivityIndicator()
@@ -224,6 +320,22 @@ final class MyMusicViewController: UIViewController {
         
         segmentedControl.pinTop(to: titleLabel.bottomAnchor, Constants.segmentedControlTop)
         segmentedControl.pinLeft(to: view, Constants.segmentedControlLeading)
+    }
+    
+    private func configurePickAllBurron() {
+        let pickAllButton: UIButton = viewFactory.audioActionButton(with: UIImage(image: .icCheck), title: "Выбрать все", imagePadding: Constants.actionButtonImagePadding, fontSize: Constants.actionButtonFontSize)
+        
+        view.addSubview(pickAllButton)
+        
+        pickAllButton.addTarget(self, action: #selector(pickAllButtonPressed), for: .touchUpInside)
+        
+        pickAllButton.isHidden = true
+        
+        pickAllButton.pinHorizontal(to: view, Constants.pickAllButtonOffsetX)
+        pickAllButton.pinTop(to: searchBar.bottomAnchor, Constants.pickAllButtonTop)
+        pickAllButton.setHeight(Constants.pickAllButtonHeight)
+        
+        self.pickAllButton = pickAllButton
     }
     
     private func configureButtonStack() {
@@ -306,59 +418,33 @@ final class MyMusicViewController: UIViewController {
         activityIndicator.pinCenterX(to: view)
     }
     
-    // MARK: - Helpers
+    // MARK: - Private method to configure segment
     private func setSegmets(cloudServiceName: String) {
         segmentedControl.removeAllSegments()
-        segmentedControl.insertSegment(withTitle: cloudServiceName, at: 0, animated: false)
-        segmentedControl.insertSegment(withTitle: "Скаченные", at: 1, animated: false)
+        segmentedControl.insertSegment(withTitle: cloudServiceName, at: Constants.defaultSegment, animated: false)
+        segmentedControl.insertSegment(withTitle: "Скаченные", at: Constants.secondarySegment, animated: false)
         
-        segmentedControl.selectedSegmentIndex = 0
+        segmentedControl.selectedSegmentIndex = Constants.defaultSegment
     }
     
-    private func blockUI() {
-        sortButton?.isEnabled = false
-        editButton?.isEnabled = false
+    // MARK: - Private method to control UI enabling
+    private func activateButtons(_ state: Bool) {
+        sortButton?.isEnabled = state
+        editButton?.isEnabled = state
         
-        playButton?.isEnabled = false
-        shuffleButton?.isEnabled = false
+        playButton?.isEnabled = state
+        shuffleButton?.isEnabled = state
     }
     
-    private func activateUI() {
-        sortButton?.isEnabled = true
-        editButton?.isEnabled = true
+    // MARK: - Private methods to update UI on edit
+    private func updateEditingModeUI(_ isEditing: Bool) {
+        playButton?.isHidden = isEditing
+        shuffleButton?.isHidden = isEditing
+        pickAllButton?.isHidden = !isEditing
+        buttonStackView.isHidden = isEditing
         
-        playButton?.isEnabled = true
-        shuffleButton?.isEnabled = true
-    }
-    
-    private func showSortActionSheet() {
-        let alert = UIAlertController(title: "Выберите тип сортировки", message: nil, preferredStyle: .actionSheet)
-        
-        let titleAttributes = [NSAttributedString.Key.foregroundColor: UIColor(color: .primary)]
-        let attributedTitle = NSAttributedString(string: "Выберите тип сортировки", attributes: titleAttributes)
-        alert.setValue(attributedTitle, forKey: "attributedTitle")
-        
-        let actions: [(String, MyMusicModel.Sort.Request?)] = [
-            ("Исполнитель (А-я)", .init(sortType: .artistAscending)),
-            ("Исполнитель (я-А)", .init(sortType: .artistDescending)),
-            ("Название (А-я)", .init(sortType: .titleAscending)),
-            ("Название (я-А)", .init(sortType: .titleDescending)),
-            ("Длительность (дольше-короче)", .init(sortType: .durationDescending)),
-            ("Длительность (короче-дольше)", .init(sortType: .durationAscending)),
-            ("Отменить", nil)
-        ]
-        
-        for (title, request) in actions {
-            let action = UIAlertAction(title: title, style: request == nil ? .cancel : .default) { _ in
-                if let request = request {
-                    self.interactor.sortAudioFiles(request)
-                }
-            }
-            action.setValue(UIColor(color: .primary), forKey: "titleTextColor")
-            alert.addAction(action)
-        }
-        
-        present(alert, animated: true)
+        navigationItem.leftBarButtonItem = isEditing ? UIBarButtonItem(title: "Удалить", style: .plain, target: self, action: #selector(deleteSelectedTracks)) : sortButton
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: isEditing ? "Готово" : "Изменить", style: .plain, target: self, action: #selector(editButtonTapped))
     }
 }
 
@@ -373,10 +459,9 @@ extension MyMusicViewController: UITableViewDataSource {
             withIdentifier: FetchedAudioCell.reuseId,
             for: indexPath
         ) as! FetchedAudioCell
+        cell.delegate = self
         
-        let audioFile = interactor.currentAudioFiles[indexPath.row]
-        
-        cell.configure(audioFile.name, audioFile.artistName, audioFile.durationInSeconds)
+        interactor.getCellData(MyMusicModel.CellData.Request(index: indexPath.row))
         
         return cell
     }
@@ -389,6 +474,19 @@ extension MyMusicViewController: UITableViewDelegate {
         didSelectRowAt indexPath: IndexPath
     ) {
         interactor.playSelectedTrack(MyMusicModel.Play.Request(index: indexPath.row))
+    }
+    
+    func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
+        interactor.canMoveTrack(MyMusicModel.CanMoveTrack.Request(index: indexPath.row))
+        return isMoveEnabled
+    }
+    
+    func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        interactor.moveTrack(MyMusicModel.MoveTrack.Request(sourceIndex: sourceIndexPath.row, destinationIndex: destinationIndexPath.row))
+    }
+    
+    func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
+        return .none
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -406,5 +504,14 @@ extension MyMusicViewController: UISearchBarDelegate {
         searchBar.text = ""
         searchBar.resignFirstResponder()
         interactor.searchAudioFiles(MyMusicModel.Search.Request(query: ""))
+    }
+}
+
+// MARK: - FetchedAudioCellDelegate
+extension MyMusicViewController: FetchedAudioCellDelegate {
+    func didTapCheckBox(in cell: FetchedAudioCell) {
+        guard let indexPath = audioTable.indexPath(for: cell) else { return }
+                
+        interactor.toggleTrackSelection(MyMusicModel.TrackSelection.Request(index: indexPath.row))
     }
 }
