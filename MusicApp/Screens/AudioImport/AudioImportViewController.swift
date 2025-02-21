@@ -32,7 +32,7 @@ final class AudioImportViewController: UIViewController {
     private let sections = [
         ("Облачные хранилища", [
             ("Google drive", UIImage(image: .icGoogleDrive)),
-            ("Yandex cloud", UIImage(image: .icYandexCloud)),
+            ("Dropbox", UIImage(image: .icDropbox)),
         ]),
         ("Другие источники", [
             ("Локальные файлы", UIImage(image: .icLocalFiles))
@@ -210,9 +210,9 @@ extension AudioImportViewController: UITableViewDelegate {
         // Handle the selection based on the chosen option.
         switch selectedOption {
         case "Google drive":
-            interactor.handleCloudServiceSelection(AudioImportModel.CloudServiceSelection.Request(service: .googleDrive))
-        case "Yandex cloud":
-            interactor.handleCloudServiceSelection(AudioImportModel.CloudServiceSelection.Request(service: .yandexCloud))
+            interactor.handleCloudServiceSelection(AudioImportModel.CloudServiceSelection.Request(service: .googleDrive, vc: self))
+        case "Dropbox":
+            interactor.handleCloudServiceSelection(AudioImportModel.CloudServiceSelection.Request(service: .dropbox, vc: self))
         case "Локальные файлы":
             interactor.handleLocalFilesSelection()
         default:

@@ -76,3 +76,5 @@ fastlane/screenshots
 *.p12
 client_*.apps.googleusercontent.com.plist
 client_*.apps.googleusercontent.com
+DEBUG-keys.plist
+PROD-keys.plist

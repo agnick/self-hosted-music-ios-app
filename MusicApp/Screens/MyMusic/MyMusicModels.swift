@@ -175,33 +175,6 @@ enum MyMusicModel {
         }
     }
     
-    enum CanMoveTrack {
-        struct Request {
-            let index: Int
-        }
-        
-        struct Response {
-            let canMove: Bool
-        }
-        
-        struct ViewModel {
-            let canMove: Bool
-        }
-    }
-    
-    enum MoveTrack {
-        struct Request {
-            let sourceIndex: Int
-            let destinationIndex: Int
-        }
-        
-        struct Response {
-        }
-        
-        struct ViewModel {
-        }
-    }
-    
     enum TrackSelection {
         struct Request {
             let index: Int

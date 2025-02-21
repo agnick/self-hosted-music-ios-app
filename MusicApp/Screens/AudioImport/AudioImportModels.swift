@@ -5,7 +5,7 @@
 //  Created by Никита Агафонов on 28.12.2024.
 //
 
-import Foundation
+import UIKit
 
 enum AudioImportModel {
     enum Error {
@@ -23,6 +23,7 @@ enum AudioImportModel {
     enum CloudServiceSelection {
         struct Request {
             let service: CloudServiceType
+            let vc: UIViewController
         }
         
         struct Response {

@@ -8,8 +8,8 @@
 import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
-
     var window: UIWindow?
+    private let cloudAuthService = CloudAuthService()
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
@@ -20,6 +20,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         window.rootViewController = UINavigationController(rootViewController: StartScreenAssembly.build())
         self.window = window
         window.makeKeyAndVisible()
+        
+        // Checking authorization for all services
+        Task.detached { [weak self] in
+            await self?.reathorizeAllServices()
+        }
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
@@ -50,6 +55,18 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // to restore the scene back to its current state.
     }
 
-
+    // MARK: - Private methods
+    private func reathorizeAllServices() async {
+        for service in CloudServiceType.allCases {
+            do {
+                try await cloudAuthService.reauthorize(for: service)
+                print("\(service) reauthorized successfully.")
+            } catch {
+                print(
+                    "Failed to reauthorize \(service): \(error.localizedDescription)"
+                )
+            }
+        }
+    }
 }
 

@@ -79,18 +79,6 @@ final class MyMusicPresenter: MyMusicPresentationLogic {
         }
     }
     
-    func presentCanMoveTrack(_ response: MyMusicModel.CanMoveTrack.Response) {
-        DispatchQueue.main.async {
-            self.view?.displayCanMoveTrack(MyMusicModel.CanMoveTrack.ViewModel(canMove: response.canMove))
-        }
-    }
-    
-    func presentMoveTrack(_ response: MyMusicModel.MoveTrack.Response) {
-        DispatchQueue.main.async {
-            self.view?.displayMoveTrack()
-        }
-    }
-    
     func presentTrackSelection(_ response: MyMusicModel.TrackSelection.Response) {
         DispatchQueue.main.async {
             self.view?.displayTrackSelection(MyMusicModel.TrackSelection.ViewModel(index: response.index))

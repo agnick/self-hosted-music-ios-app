@@ -5,15 +5,15 @@
 //  Created by Никита Агафонов on 10.01.2025.
 //
 
-import Foundation
+import UIKit
 
 // MARK: - CloudAuthService
 struct CloudAuthService {
     private let cloudAuth = CloudAuth.shared
     
     // MARK: - Public methods
-    func authorize(for service: CloudServiceType) async throws {
-        try await cloudAuth.authorize(for: service)
+    func authorize(for service: CloudServiceType, vc: UIViewController? = nil) async throws {
+        try await cloudAuth.authorize(for: service, vc: vc)
     }
     
     func reauthorize(for service: CloudServiceType) async throws {
@@ -28,7 +28,7 @@ struct CloudAuthService {
         return cloudAuth.isAuthorized(for: service)
     }
     
-    func getWorker(for service: CloudServiceType) -> CloudWorker? {
+    func getWorker(for service: CloudServiceType) -> CloudWorkerProtocol? {
         return cloudAuth.getWorker(for: service)
     }
     
@@ -44,31 +44,33 @@ final class CloudAuth {
     
     // MARK: - Variables
     private var authorizedService: CloudServiceType?
-    private let workers: [CloudServiceType: CloudWorker] = [
-        .googleDrive: GoogleDriveWorker(),
-        .yandexCloud: YandexCloudWorker(),
+    private let factories: [CloudServiceType: CloudWorkerFactory] = [
+        .googleDrive: GoogleDriveFactory(),
+        .dropbox: DropboxFactory(),
     ]
     
     // MARK: - Lifecycle
     private init() {}
     
     // MARK: - Authorization methods
-    func authorize(for service: CloudServiceType) async throws {
-        guard let worker = workers[service] else {
-            throw NSError(domain: "Worker not found", code: 404)
+    func authorize(for service: CloudServiceType, vc: UIViewController? = nil) async throws {
+        guard let factory = factories[service] else {
+            throw NSError(domain: "Factory not found", code: 404)
         }
         
         if authorizedService == service {
             return
         }
         
-        try await worker.authorize()
+        let worker = factory.createWorker()
+        try await worker.authorize(vc: vc)
+        currentWorker = worker
         authorizedService = service
     }
     
     func reauthorize(for service: CloudServiceType) async throws {
-        guard let worker = workers[service] else {
-            throw NSError(domain: "Worker not found", code: 404)
+        guard let worker = currentWorker, authorizedService == service else {
+            throw NSError(domain: "Worker not found or service not authorized", code: 404)
         }
         
         do {
@@ -80,12 +82,13 @@ final class CloudAuth {
     }
     
     func logout(from service: CloudServiceType) async throws {
-        guard let worker = workers[service] else {
+        guard let worker = currentWorker else {
             throw NSError(domain: "Worker not found", code: 404)
         }
         
         try await worker.logout()
         authorizedService = nil
+        currentWorker = nil
     }
     
     // MARK: - Utility methods
@@ -93,8 +96,8 @@ final class CloudAuth {
         return authorizedService == service
     }
     
-    func getWorker(for service: CloudServiceType) -> CloudWorker? {
-        return workers[service]
+    func getWorker(for service: CloudServiceType) -> CloudWorkerProtocol? {
+        return authorizedService == service ? currentWorker : nil
     }
     
     func getAuthorizedService() -> CloudServiceType? {

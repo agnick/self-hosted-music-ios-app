@@ -9,12 +9,12 @@ import GoogleSignIn
 import GoogleAPIClientForREST
 import AVFoundation
 
-final class GoogleDriveWorker: CloudWorker {
+final class GoogleDriveWorker: CloudWorkerProtocol {
     // MARK: - Variables
     private var driveService = GTLRDriveService()
     
     // MARK: - Public methods
-    func authorize() async throws {
+    func authorize(vc: UIViewController?) async throws {
         guard let clientID = Bundle.main.object(forInfoDictionaryKey: "CLIENT_ID") as? String else {
             throw NSError(domain: "Missing CLIENT_ID in Info.plist", code: 1)
         }

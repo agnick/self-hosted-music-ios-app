@@ -6,13 +6,15 @@
 //
 
 import UIKit
-import GoogleSignIn
+import SwiftyDropbox
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        DropboxClientsManager.setupWithAppKey(ENV.DROPBOX_APP_KEY)
+        
         return true
     }
 
@@ -33,3 +35,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
 }
 
+var ENV: APIKeyable {
+    #if DEBUG
+    return DebugENV()
+    #else
+    return ProdENV()
+    #endif
+}

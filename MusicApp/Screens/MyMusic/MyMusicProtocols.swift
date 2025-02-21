@@ -27,10 +27,6 @@ protocol MyMusicBusinessLogic {
     func loadSortOptions()
     // Get Cell Data
     func getCellData(_ request: MyMusicModel.CellData.Request)
-    // Can move track
-    func canMoveTrack(_ request: MyMusicModel.CanMoveTrack.Request)
-    // Move track
-    func moveTrack(_ request: MyMusicModel.MoveTrack.Request)
     // Select track
     func toggleTrackSelection(_ request: MyMusicModel.TrackSelection.Request)
 }
@@ -48,8 +44,6 @@ protocol MyMusicPresentationLogic {
     func presentPickAll(_ response: MyMusicModel.PickTracks.Response)
     func presentSortOptions()
     func presentCellData(_ response: MyMusicModel.CellData.Response)
-    func presentCanMoveTrack(_ response: MyMusicModel.CanMoveTrack.Response)
-    func presentMoveTrack(_ response: MyMusicModel.MoveTrack.Response)
     func presentTrackSelection(_ response: MyMusicModel.TrackSelection.Response)
     func presentError(_ response: MyMusicModel.Error.Response)
     

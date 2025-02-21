@@ -62,8 +62,6 @@ final class MyMusicViewController: UIViewController {
     private var interactor: (MyMusicBusinessLogic & MyMusicDataStore)
     // View factory for MyMusicViewController.
     private let viewFactory: MyMusicViewFactory
-    // State for tracking whether the view is in editing mode.
-    private var isMoveEnabled: Bool = false
         
     /* UI components */
     // Buttons.
@@ -120,6 +118,10 @@ final class MyMusicViewController: UIViewController {
     
     @objc private func deleteSelectedTracks() {
         interactor.deleteTracks(MyMusicModel.Delete.Request(selectedSegmentIndex: segmentedControl.selectedSegmentIndex))
+    }
+    
+    @objc private func addTrackToPlaylist() {
+        // TODO: - add to playlist
     }
     
     // MARK: - Segment action
@@ -185,7 +187,8 @@ final class MyMusicViewController: UIViewController {
     
     func displayPickAll(_ viewModel: MyMusicModel.PickTracks.ViewModel) {
         pickAllButton?.setTitle(viewModel.buttonTitle, for: .normal)
-        audioTable.reloadSections(IndexSet(integer: 0), with: .none)
+        
+        audioTable.reloadData()
     }
     
     func displaySortOptions(_ viewModel: MyMusicModel.SortOptions.ViewModel) {
@@ -225,14 +228,6 @@ final class MyMusicViewController: UIViewController {
         guard let cell = audioTable.cellForRow(at: IndexPath(row: viewModel.index, section: 0)) as? FetchedAudioCell else { return }
         
         cell.configure(isEditingMode: viewModel.isEditingMode, isSelected: viewModel.isSelected, audioName: viewModel.name, artistName: viewModel.artistName, duration: viewModel.durationInSeconds)
-    }
-    
-    func displayCanMoveTrack(_ viewModel: MyMusicModel.CanMoveTrack.ViewModel) {
-        isMoveEnabled = viewModel.canMove
-    }
-    
-    func displayMoveTrack() {
-        audioTable.reloadData()
     }
     
     func displayTrackSelection(_ viewModel: MyMusicModel.TrackSelection.ViewModel) {
@@ -443,8 +438,17 @@ final class MyMusicViewController: UIViewController {
         pickAllButton?.isHidden = !isEditing
         buttonStackView.isHidden = isEditing
         
-        navigationItem.leftBarButtonItem = isEditing ? UIBarButtonItem(title: "Удалить", style: .plain, target: self, action: #selector(deleteSelectedTracks)) : sortButton
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: isEditing ? "Готово" : "Изменить", style: .plain, target: self, action: #selector(editButtonTapped))
+        if isEditing {
+            let deleteButton = UIBarButtonItem(title: "Удалить", style: .plain, target: self, action: #selector(deleteSelectedTracks))
+            let addButton = UIBarButtonItem(title: "Добавить", style: .plain, target: self, action: #selector(addTrackToPlaylist))
+            
+            navigationItem.leftBarButtonItems = [deleteButton, addButton]
+            navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Готово", style: .plain, target: self, action: #selector(editButtonTapped))
+        } else {
+            navigationItem.leftBarButtonItems = nil
+            navigationItem.leftBarButtonItem = sortButton
+            navigationItem.rightBarButtonItem = editButton
+        }
     }
 }
 
@@ -474,15 +478,6 @@ extension MyMusicViewController: UITableViewDelegate {
         didSelectRowAt indexPath: IndexPath
     ) {
         interactor.playSelectedTrack(MyMusicModel.Play.Request(index: indexPath.row))
-    }
-    
-    func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
-        interactor.canMoveTrack(MyMusicModel.CanMoveTrack.Request(index: indexPath.row))
-        return isMoveEnabled
-    }
-    
-    func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
-        interactor.moveTrack(MyMusicModel.MoveTrack.Request(sourceIndex: sourceIndexPath.row, destinationIndex: destinationIndexPath.row))
     }
     
     func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {

@@ -77,7 +77,8 @@ extension TabViewController: MiniPlayerViewDelegate {
     }
     
     func miniPlayerViewDidTap(_ miniPlayerView: MiniPlayerView) {
-        
+        let playerVC = PlayerAssembly.build()
+        present(playerVC, animated: true)
     }
     
     func miniPlayerPlayPauseTapped(_ miniPlayerVie: MiniPlayerView) {

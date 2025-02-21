@@ -111,6 +111,7 @@ final class MiniPlayerView: UIView {
         configureBtnStack()
         configureTrackTitle()
         configureArtistName()
+        setupGesture()
     }
     
     private func configureTrackImg() {

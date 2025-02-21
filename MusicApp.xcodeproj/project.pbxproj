@@ -37,7 +37,7 @@
 		2646EE4A2D2EBCDB002E7FFA /* CloudServiceType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2646EE492D2EBCD9002E7FFA /* CloudServiceType.swift */; };
 		2646EE4D2D2EE20D002E7FFA /* CloudAudioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2646EE4C2D2EE201002E7FFA /* CloudAudioService.swift */; };
 		2646EE502D2EE547002E7FFA /* GoogleDriveWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2646EE4F2D2EE535002E7FFA /* GoogleDriveWorker.swift */; };
-		2646EE522D2EE55C002E7FFA /* YandexCloudWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2646EE512D2EE550002E7FFA /* YandexCloudWorker.swift */; };
+		2646EE522D2EE55C002E7FFA /* DropboxWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2646EE512D2EE550002E7FFA /* DropboxWorker.swift */; };
 		2654A3E62D3AA84A00CCC58D /* MyMusicViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2654A3E52D3AA82D00CCC58D /* MyMusicViewController.swift */; };
 		2654A3E82D3AA8B400CCC58D /* MyMusicModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2654A3E72D3AA8AA00CCC58D /* MyMusicModels.swift */; };
 		2654A3EA2D3AA8CA00CCC58D /* MyMusicProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2654A3E92D3AA8BD00CCC58D /* MyMusicProtocols.swift */; };
@@ -45,7 +45,10 @@
 		2654A3EE2D3AA90900CCC58D /* MyMusicPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2654A3ED2D3AA90200CCC58D /* MyMusicPresenter.swift */; };
 		2654A3F02D3AA93600CCC58D /* MyMusicAssembly.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2654A3EF2D3AA92600CCC58D /* MyMusicAssembly.swift */; };
 		2654A44C2D3BDB5D00CCC58D /* MyMusicViewFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2654A44B2D3BDB4800CCC58D /* MyMusicViewFactory.swift */; };
-		2694C2B22D3037F900DFB9E8 /* CloudWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2694C2B12D3037F300DFB9E8 /* CloudWorker.swift */; };
+		2667255F2D687BEA00AA69AB /* CloudWorkerFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2667255E2D687BDF00AA69AB /* CloudWorkerFactory.swift */; };
+		266725612D68948B00AA69AB /* GoogleDriveFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266725602D68947B00AA69AB /* GoogleDriveFactory.swift */; };
+		266725632D6894CF00AA69AB /* DropboxFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 266725622D6894C600AA69AB /* DropboxFactory.swift */; };
+		2694C2B22D3037F900DFB9E8 /* CloudWorkerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2694C2B12D3037F300DFB9E8 /* CloudWorkerProtocol.swift */; };
 		2694C2CC2D31A0D600DFB9E8 /* CloudAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2694C2CB2D31A05E00DFB9E8 /* CloudAuthService.swift */; };
 		2694C2D22D34294F00DFB9E8 /* SettingsScreenModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2694C2D12D34294A00DFB9E8 /* SettingsScreenModels.swift */; };
 		2694C2D42D34295700DFB9E8 /* SettingsScreenProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2694C2D32D34295200DFB9E8 /* SettingsScreenProtocols.swift */; };
@@ -55,6 +58,16 @@
 		2694C2DC2D34298100DFB9E8 /* SettingsScreenWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2694C2DB2D34297E00DFB9E8 /* SettingsScreenWorker.swift */; };
 		2694C2DE2D34298800DFB9E8 /* SettingsScreenViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2694C2DD2D34298300DFB9E8 /* SettingsScreenViewController.swift */; };
 		2694C33A2D344F8900DFB9E8 /* .gitignore in Sources */ = {isa = PBXBuildFile; fileRef = 2694C3392D344F7F00DFB9E8 /* .gitignore */; };
+		26A579302D652F55007FA466 /* PlayerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A5792E2D652F55007FA466 /* PlayerViewController.swift */; };
+		26A579322D653170007FA466 /* PlayerInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A579312D653163007FA466 /* PlayerInteractor.swift */; };
+		26A579342D65317B007FA466 /* PlayerPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A579332D653176007FA466 /* PlayerPresenter.swift */; };
+		26A579362D653187007FA466 /* PlayerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A579352D65317F007FA466 /* PlayerModels.swift */; };
+		26A579382D653196007FA466 /* PlayerProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A579372D65318C007FA466 /* PlayerProtocols.swift */; };
+		26A5793A2D6531A4007FA466 /* PlayerAssembly.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A579392D65319A007FA466 /* PlayerAssembly.swift */; };
+		26A579402D65EB94007FA466 /* DEBUG-keys.plist in Resources */ = {isa = PBXBuildFile; fileRef = 26A5793F2D65EB94007FA466 /* DEBUG-keys.plist */; };
+		26A579422D65EBAF007FA466 /* PROD-keys.plist in Resources */ = {isa = PBXBuildFile; fileRef = 26A579412D65EBAF007FA466 /* PROD-keys.plist */; };
+		26A579452D65EC03007FA466 /* Env.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A579442D65EBFE007FA466 /* Env.swift */; };
+		26A579472D65EDAC007FA466 /* EnvProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26A579462D65EDA8007FA466 /* EnvProtocols.swift */; };
 		26C446C22D4908460094C5F4 /* LocalAudioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26C446C12D4908420094C5F4 /* LocalAudioService.swift */; };
 		26C446C52D4909380094C5F4 /* LocalAudioWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26C446C42D4909300094C5F4 /* LocalAudioWorker.swift */; };
 		26C446F92D4A76680094C5F4 /* AudioImportWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26C446F82D4A75FD0094C5F4 /* AudioImportWorker.swift */; };
@@ -64,7 +77,6 @@
 		26C640D72D36D4DA00E83901 /* Image.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26C640D62D36D4D700E83901 /* Image.swift */; };
 		26C6410F2D36F45E00E83901 /* UIViewController+Alert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26C6410E2D36F45000E83901 /* UIViewController+Alert.swift */; };
 		26D6719C2D3D7ABA0074B5B8 /* FetchedAudioCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26D6719B2D3D7AA60074B5B8 /* FetchedAudioCell.swift */; };
-		26E7E1D82D2D4DA3003AFA22 /* client_105797830130-sdde13lpju8564qb49gc5jldd3as70hh.apps.googleusercontent.com.plist in Resources */ = {isa = PBXBuildFile; fileRef = 26E7E1D72D2D4DA3003AFA22 /* client_105797830130-sdde13lpju8564qb49gc5jldd3as70hh.apps.googleusercontent.com.plist */; };
 		26E7E20C2D2D6381003AFA22 /* AudioFilesOverviewScreenModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E7E20B2D2D6378003AFA22 /* AudioFilesOverviewScreenModels.swift */; };
 		26E7E20E2D2D638F003AFA22 /* AudioFilesOverviewScreenProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E7E20D2D2D638A003AFA22 /* AudioFilesOverviewScreenProtocols.swift */; };
 		26E7E2102D2D639F003AFA22 /* AudioFilesOverviewScreenInteractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E7E20F2D2D6396003AFA22 /* AudioFilesOverviewScreenInteractor.swift */; };
@@ -106,7 +118,7 @@
 		2646EE492D2EBCD9002E7FFA /* CloudServiceType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudServiceType.swift; sourceTree = "<group>"; };
 		2646EE4C2D2EE201002E7FFA /* CloudAudioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudAudioService.swift; sourceTree = "<group>"; };
 		2646EE4F2D2EE535002E7FFA /* GoogleDriveWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleDriveWorker.swift; sourceTree = "<group>"; };
-		2646EE512D2EE550002E7FFA /* YandexCloudWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YandexCloudWorker.swift; sourceTree = "<group>"; };
+		2646EE512D2EE550002E7FFA /* DropboxWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropboxWorker.swift; sourceTree = "<group>"; };
 		2654A3E52D3AA82D00CCC58D /* MyMusicViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyMusicViewController.swift; sourceTree = "<group>"; };
 		2654A3E72D3AA8AA00CCC58D /* MyMusicModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyMusicModels.swift; sourceTree = "<group>"; };
 		2654A3E92D3AA8BD00CCC58D /* MyMusicProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyMusicProtocols.swift; sourceTree = "<group>"; };
@@ -114,8 +126,11 @@
 		2654A3ED2D3AA90200CCC58D /* MyMusicPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyMusicPresenter.swift; sourceTree = "<group>"; };
 		2654A3EF2D3AA92600CCC58D /* MyMusicAssembly.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyMusicAssembly.swift; sourceTree = "<group>"; };
 		2654A44B2D3BDB4800CCC58D /* MyMusicViewFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyMusicViewFactory.swift; sourceTree = "<group>"; };
+		2667255E2D687BDF00AA69AB /* CloudWorkerFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudWorkerFactory.swift; sourceTree = "<group>"; };
+		266725602D68947B00AA69AB /* GoogleDriveFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleDriveFactory.swift; sourceTree = "<group>"; };
+		266725622D6894C600AA69AB /* DropboxFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropboxFactory.swift; sourceTree = "<group>"; };
 		26858F762D1AE2A600897E37 /* MusicApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MusicApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		2694C2B12D3037F300DFB9E8 /* CloudWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudWorker.swift; sourceTree = "<group>"; };
+		2694C2B12D3037F300DFB9E8 /* CloudWorkerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudWorkerProtocol.swift; sourceTree = "<group>"; };
 		2694C2CB2D31A05E00DFB9E8 /* CloudAuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudAuthService.swift; sourceTree = "<group>"; };
 		2694C2D12D34294A00DFB9E8 /* SettingsScreenModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreenModels.swift; sourceTree = "<group>"; };
 		2694C2D32D34295200DFB9E8 /* SettingsScreenProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreenProtocols.swift; sourceTree = "<group>"; };
@@ -125,6 +140,16 @@
 		2694C2DB2D34297E00DFB9E8 /* SettingsScreenWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreenWorker.swift; sourceTree = "<group>"; };
 		2694C2DD2D34298300DFB9E8 /* SettingsScreenViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreenViewController.swift; sourceTree = "<group>"; };
 		2694C3392D344F7F00DFB9E8 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		26A5792E2D652F55007FA466 /* PlayerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerViewController.swift; sourceTree = "<group>"; };
+		26A579312D653163007FA466 /* PlayerInteractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerInteractor.swift; sourceTree = "<group>"; };
+		26A579332D653176007FA466 /* PlayerPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerPresenter.swift; sourceTree = "<group>"; };
+		26A579352D65317F007FA466 /* PlayerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerModels.swift; sourceTree = "<group>"; };
+		26A579372D65318C007FA466 /* PlayerProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerProtocols.swift; sourceTree = "<group>"; };
+		26A579392D65319A007FA466 /* PlayerAssembly.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerAssembly.swift; sourceTree = "<group>"; };
+		26A5793F2D65EB94007FA466 /* DEBUG-keys.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "DEBUG-keys.plist"; sourceTree = "<group>"; };
+		26A579412D65EBAF007FA466 /* PROD-keys.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "PROD-keys.plist"; sourceTree = "<group>"; };
+		26A579442D65EBFE007FA466 /* Env.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Env.swift; sourceTree = "<group>"; };
+		26A579462D65EDA8007FA466 /* EnvProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvProtocols.swift; sourceTree = "<group>"; };
 		26C446C12D4908420094C5F4 /* LocalAudioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAudioService.swift; sourceTree = "<group>"; };
 		26C446C42D4909300094C5F4 /* LocalAudioWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAudioWorker.swift; sourceTree = "<group>"; };
 		26C446F82D4A75FD0094C5F4 /* AudioImportWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioImportWorker.swift; sourceTree = "<group>"; };
@@ -134,7 +159,6 @@
 		26C640D62D36D4D700E83901 /* Image.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Image.swift; sourceTree = "<group>"; };
 		26C6410E2D36F45000E83901 /* UIViewController+Alert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Alert.swift"; sourceTree = "<group>"; };
 		26D6719B2D3D7AA60074B5B8 /* FetchedAudioCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FetchedAudioCell.swift; sourceTree = "<group>"; };
-		26E7E1D72D2D4DA3003AFA22 /* client_105797830130-sdde13lpju8564qb49gc5jldd3as70hh.apps.googleusercontent.com.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "client_105797830130-sdde13lpju8564qb49gc5jldd3as70hh.apps.googleusercontent.com.plist"; sourceTree = "<group>"; };
 		26E7E20B2D2D6378003AFA22 /* AudioFilesOverviewScreenModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFilesOverviewScreenModels.swift; sourceTree = "<group>"; };
 		26E7E20D2D2D638A003AFA22 /* AudioFilesOverviewScreenProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFilesOverviewScreenProtocols.swift; sourceTree = "<group>"; };
 		26E7E20F2D2D6396003AFA22 /* AudioFilesOverviewScreenInteractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioFilesOverviewScreenInteractor.swift; sourceTree = "<group>"; };
@@ -202,6 +226,9 @@
 		2601DB932D2AF0E2002024CC /* MusicApp */ = {
 			isa = PBXGroup;
 			children = (
+				2667255D2D687AF400AA69AB /* Factories */,
+				261BEB222D5CE64C0074982D /* Workers */,
+				26A579432D65EBDB007FA466 /* EnvManager */,
 				261BEB212D5CE5580074982D /* Services */,
 				26C641112D36F9E500E83901 /* CustomViews */,
 				26C641102D36F96E00E83901 /* Screens */,
@@ -214,6 +241,8 @@
 				2601DB8F2D2AF0E2002024CC /* Info.plist */,
 				2601DB912D2AF0E2002024CC /* LaunchScreen.storyboard */,
 				2601DB922D2AF0E2002024CC /* SceneDelegate.swift */,
+				26A5793F2D65EB94007FA466 /* DEBUG-keys.plist */,
+				26A579412D65EBAF007FA466 /* PROD-keys.plist */,
 			);
 			path = MusicApp;
 			sourceTree = "<group>";
@@ -221,7 +250,6 @@
 		261BEB212D5CE5580074982D /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				261BEB222D5CE64C0074982D /* Workers */,
 				261F54292D4E5A1A00FA94F2 /* AudioPlayerService.swift */,
 				2646EE4C2D2EE201002E7FFA /* CloudAudioService.swift */,
 				2694C2CB2D31A05E00DFB9E8 /* CloudAuthService.swift */,
@@ -233,10 +261,10 @@
 		261BEB222D5CE64C0074982D /* Workers */ = {
 			isa = PBXGroup;
 			children = (
-				26C446C42D4909300094C5F4 /* LocalAudioWorker.swift */,
-				2694C2B12D3037F300DFB9E8 /* CloudWorker.swift */,
-				2646EE512D2EE550002E7FFA /* YandexCloudWorker.swift */,
+				2694C2B12D3037F300DFB9E8 /* CloudWorkerProtocol.swift */,
 				2646EE4F2D2EE535002E7FFA /* GoogleDriveWorker.swift */,
+				2646EE512D2EE550002E7FFA /* DropboxWorker.swift */,
+				26C446C42D4909300094C5F4 /* LocalAudioWorker.swift */,
 			);
 			path = Workers;
 			sourceTree = "<group>";
@@ -273,6 +301,16 @@
 			path = MyMusic;
 			sourceTree = "<group>";
 		};
+		2667255D2D687AF400AA69AB /* Factories */ = {
+			isa = PBXGroup;
+			children = (
+				266725622D6894C600AA69AB /* DropboxFactory.swift */,
+				266725602D68947B00AA69AB /* GoogleDriveFactory.swift */,
+				2667255E2D687BDF00AA69AB /* CloudWorkerFactory.swift */,
+			);
+			path = Factories;
+			sourceTree = "<group>";
+		};
 		26858F6D2D1AE2A600897E37 = {
 			isa = PBXGroup;
 			children = (
@@ -282,7 +320,6 @@
 				26858F772D1AE2A600897E37 /* Products */,
 				D48A47FAD7DEA4098B3D259C /* Pods */,
 				C59305DD2321A924BEF7E489 /* Frameworks */,
-				26E7E1D72D2D4DA3003AFA22 /* client_105797830130-sdde13lpju8564qb49gc5jldd3as70hh.apps.googleusercontent.com.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -308,6 +345,28 @@
 			path = SettingsScreen;
 			sourceTree = "<group>";
 		};
+		26A5792F2D652F55007FA466 /* Player */ = {
+			isa = PBXGroup;
+			children = (
+				26A579392D65319A007FA466 /* PlayerAssembly.swift */,
+				26A579372D65318C007FA466 /* PlayerProtocols.swift */,
+				26A579352D65317F007FA466 /* PlayerModels.swift */,
+				26A579332D653176007FA466 /* PlayerPresenter.swift */,
+				26A579312D653163007FA466 /* PlayerInteractor.swift */,
+				26A5792E2D652F55007FA466 /* PlayerViewController.swift */,
+			);
+			path = Player;
+			sourceTree = "<group>";
+		};
+		26A579432D65EBDB007FA466 /* EnvManager */ = {
+			isa = PBXGroup;
+			children = (
+				26A579462D65EDA8007FA466 /* EnvProtocols.swift */,
+				26A579442D65EBFE007FA466 /* Env.swift */,
+			);
+			path = EnvManager;
+			sourceTree = "<group>";
+		};
 		26C640D32D36D4C800E83901 /* Colors */ = {
 			isa = PBXGroup;
 			children = (
@@ -327,6 +386,7 @@
 		26C641102D36F96E00E83901 /* Screens */ = {
 			isa = PBXGroup;
 			children = (
+				26A5792F2D652F55007FA466 /* Player */,
 				2694C2CF2D34292700DFB9E8 /* SettingsScreen */,
 				2654A3E42D3AA82500CCC58D /* MyMusic */,
 				26E7E20A2D2D636F003AFA22 /* AudioFilesOverviewScreen */,
@@ -440,10 +500,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				26A579402D65EB94007FA466 /* DEBUG-keys.plist in Resources */,
+				26A579422D65EBAF007FA466 /* PROD-keys.plist in Resources */,
 				2601DBA82D2AF0E2002024CC /* Assets.xcassets in Resources */,
 				2601DBAA2D2AF0E2002024CC /* LaunchScreen.storyboard in Resources */,
 				261F54312D4E9F5900FA94F2 /* README.md in Resources */,
-				26E7E1D82D2D4DA3003AFA22 /* client_105797830130-sdde13lpju8564qb49gc5jldd3as70hh.apps.googleusercontent.com.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -500,8 +561,13 @@
 				261F542A2D4E5A2300FA94F2 /* AudioPlayerService.swift in Sources */,
 				2694C2D22D34294F00DFB9E8 /* SettingsScreenModels.swift in Sources */,
 				2601DB942D2AF0E2002024CC /* ImportOptionsCell.swift in Sources */,
+				2667255F2D687BEA00AA69AB /* CloudWorkerFactory.swift in Sources */,
+				266725632D6894CF00AA69AB /* DropboxFactory.swift in Sources */,
+				26A5793A2D6531A4007FA466 /* PlayerAssembly.swift in Sources */,
 				2601DB952D2AF0E2002024CC /* TabViewController.swift in Sources */,
+				26A579302D652F55007FA466 /* PlayerViewController.swift in Sources */,
 				2601DB962D2AF0E2002024CC /* UIView+Pin.swift in Sources */,
+				26A579322D653170007FA466 /* PlayerInteractor.swift in Sources */,
 				2646EE502D2EE547002E7FFA /* GoogleDriveWorker.swift in Sources */,
 				2601DB972D2AF0E2002024CC /* UserDefaultsKeys.swift in Sources */,
 				2654A3EA2D3AA8CA00CCC58D /* MyMusicProtocols.swift in Sources */,
@@ -514,15 +580,19 @@
 				2601DB9B2D2AF0E2002024CC /* AudioImportPresenter.swift in Sources */,
 				26C640D42D36D4C800E83901 /* Color.swift in Sources */,
 				26C446F92D4A76680094C5F4 /* AudioImportWorker.swift in Sources */,
-				2694C2B22D3037F900DFB9E8 /* CloudWorker.swift in Sources */,
+				2694C2B22D3037F900DFB9E8 /* CloudWorkerProtocol.swift in Sources */,
+				26A579342D65317B007FA466 /* PlayerPresenter.swift in Sources */,
 				2601DB9C2D2AF0E2002024CC /* AudioImportProtocols.swift in Sources */,
 				26E7E2182D2D640F003AFA22 /* AudioFilesOverviewScreenWorker.swift in Sources */,
+				26A579382D653196007FA466 /* PlayerProtocols.swift in Sources */,
+				266725612D68948B00AA69AB /* GoogleDriveFactory.swift in Sources */,
 				26E7E2142D2D63FA003AFA22 /* AudioFilesOverviewScreenAssembly.swift in Sources */,
 				2654A3EC2D3AA8F900CCC58D /* MyMusicInteractor.swift in Sources */,
 				26C640D72D36D4DA00E83901 /* Image.swift in Sources */,
 				261F542F2D4E6BCD00FA94F2 /* MiniPlayerViewFactory.swift in Sources */,
 				26E7E20E2D2D638F003AFA22 /* AudioFilesOverviewScreenProtocols.swift in Sources */,
 				2646EE4A2D2EBCDB002E7FFA /* CloudServiceType.swift in Sources */,
+				26A579452D65EC03007FA466 /* Env.swift in Sources */,
 				26E7E2102D2D639F003AFA22 /* AudioFilesOverviewScreenInteractor.swift in Sources */,
 				26C446FD2D4A9B990094C5F4 /* MyMusicWorker.swift in Sources */,
 				2654A3E62D3AA84A00CCC58D /* MyMusicViewController.swift in Sources */,
@@ -546,11 +616,13 @@
 				2654A3EE2D3AA90900CCC58D /* MyMusicPresenter.swift in Sources */,
 				2694C2D42D34295700DFB9E8 /* SettingsScreenProtocols.swift in Sources */,
 				2601DBA52D2AF0E2002024CC /* StartScreenWorker.swift in Sources */,
-				2646EE522D2EE55C002E7FFA /* YandexCloudWorker.swift in Sources */,
+				2646EE522D2EE55C002E7FFA /* DropboxWorker.swift in Sources */,
 				2601DBA62D2AF0E2002024CC /* AppDelegate.swift in Sources */,
 				2654A3E82D3AA8B400CCC58D /* MyMusicModels.swift in Sources */,
+				26A579472D65EDAC007FA466 /* EnvProtocols.swift in Sources */,
 				261F542C2D4E5FB400FA94F2 /* MiniPlayerView.swift in Sources */,
 				2694C33A2D344F8900DFB9E8 /* .gitignore in Sources */,
+				26A579362D653187007FA466 /* PlayerModels.swift in Sources */,
 				2694C2CC2D31A0D600DFB9E8 /* CloudAuthService.swift in Sources */,
 				26E7E2122D2D63D4003AFA22 /* AudioFilesOverviewScreenPresenter.swift in Sources */,
 				26E7E2162D2D6408003AFA22 /* AudioFilesOverviewScreenViewController.swift in Sources */,

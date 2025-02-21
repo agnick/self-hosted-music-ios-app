@@ -22,42 +22,23 @@ final class StartScreenInteractor: StartScreenBusinessLogic {
     
     // MARK: - Navigation determination
     func determineNavigationDestination() {
-        Task {
-            // Checking authorization for all cloud services.
-            await checkAuthorizationForAllServices()
+        // Perform an asynchronous delay so as not to block the main thread and allow the UI to load.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            guard let self = self else { return }
             
-            // Perform an asynchronous delay so as not to block the main thread and allow the UI to load.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-                guard let self = self else { return }
+            let isFirstLaunch = worker.isFirstLaunch()
+            
+            if isFirstLaunch {
+                print("Launching slider guide...")
+                worker.markOnboardingCompleted()
                 
-                let isFirstLaunch = worker.isFirstLaunch()
+                // Routing to slider guide screen.
+                presenter.routeToSliderGuideScreen()
+            } else {
+                print("Launching main screen...")
                 
-                if isFirstLaunch {
-                    print("Launching slider guide...")
-                    worker.markOnboardingCompleted()
-                    
-                    // Routing to slider guide screen.
-                    presenter.routeToSliderGuideScreen()
-                } else {
-                    print("Launching main screen...")
-                    
-                    // Routing to main import screen.
-                    presenter.routeToMainImportScreen() // Main screen
-                }
-            }
-        }
-    }
-    
-    // MARK: - Authorization checking
-    private func checkAuthorizationForAllServices() async {
-        for service in CloudServiceType.allCases {
-            do {
-                try await cloudAuthService.reauthorize(for: service)
-                print("\(service) reauthorized successfully.")
-            } catch {
-                print(
-                    "Failed to reauthorize \(service): \(error.localizedDescription)"
-                )
+                // Routing to main import screen.
+                presenter.routeToMainImportScreen() // Main screen
             }
         }
     }

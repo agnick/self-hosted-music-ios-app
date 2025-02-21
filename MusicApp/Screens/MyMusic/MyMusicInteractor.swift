@@ -170,24 +170,6 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
         presenter.presentCellData(MyMusicModel.CellData.Response(index: request.index, isEditingMode: isEditing, isSelected: isSelected, audioFile: audioFile))
     }
     
-    func canMoveTrack(_ request: MyMusicModel.CanMoveTrack.Request) {
-        presenter.presentCanMoveTrack(MyMusicModel.CanMoveTrack.Response(canMove: isEditing))
-    }
-    
-    func moveTrack(_ request: MyMusicModel.MoveTrack.Request) {
-        guard
-            request.sourceIndex < currentAudioFiles.count,
-            request.destinationIndex < currentAudioFiles.count
-        else {
-            return
-        }
-        
-        let movedTrack = currentAudioFiles.remove(at: request.sourceIndex)
-        currentAudioFiles.insert(movedTrack, at: request.destinationIndex)
-        
-        presenter.presentMoveTrack(MyMusicModel.MoveTrack.Response())
-    }
-    
     func toggleTrackSelection(_ request: MyMusicModel.TrackSelection.Request) {
         let audioFile = currentAudioFiles[request.index]
         let trackID = uniqueTrackID(for: audioFile)
@@ -241,6 +223,8 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
         case .local:
             return audioFile.url
         case .googleDrive:
+            return audioFile.url
+        case .dropbox:
             return audioFile.url
         }
     }

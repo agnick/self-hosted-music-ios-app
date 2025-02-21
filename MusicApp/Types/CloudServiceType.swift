@@ -8,12 +8,12 @@
 // Enumeration for representing cloud service types.
 enum CloudServiceType: CaseIterable {
     case googleDrive
-    case yandexCloud
+    case dropbox
         
     var displayName: String {
         switch self {
         case .googleDrive: return "Google Drive"
-        case .yandexCloud: return "Yandex Cloud"
+        case .dropbox: return "Dropbox"
         }
     }
 }

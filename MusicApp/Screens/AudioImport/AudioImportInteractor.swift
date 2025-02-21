@@ -34,7 +34,7 @@ final class AudioImportInteractor: AudioImportBusinessLogic {
                     .routeToAudioFilesOverviewScreen(service: request.service)
             } else {
                 do {
-                    try await cloudAuthService.authorize(for: request.service)
+                    try await cloudAuthService.authorize(for: request.service, vc: request.vc)
                     presenter
                         .routeToAudioFilesOverviewScreen(
                             service: request.service

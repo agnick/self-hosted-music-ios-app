@@ -21,4 +21,5 @@ struct AudioFile {
 enum AudioSource: String {
     case local = "local"
     case googleDrive = "google_drive"
+    case dropbox = "dropbox"
 }
