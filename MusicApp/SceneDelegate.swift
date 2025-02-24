@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SwiftyDropbox
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
@@ -15,15 +16,38 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
+        // Checking authorization for all services
+        Task.detached { [weak self] in
+            await self?.reathorizeAllServices()
+        }
+        
         guard let windowScene = (scene as? UIWindowScene) else { return }
         let window = UIWindow(windowScene: windowScene)
         window.rootViewController = UINavigationController(rootViewController: StartScreenAssembly.build())
         self.window = window
         window.makeKeyAndVisible()
+    }
+    
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        let oauthCompletion: DropboxOAuthCompletion = {
+            if let authResult = $0 {
+                switch authResult {
+                case .success:
+                    print("Success! User is logged into DropboxClientsManager.")
+                    NotificationCenter.default.post(name: NSNotification.Name("DropboxAuthCompleted"), object: nil)
+                case .cancel:
+                    print("Authorization flow was manually canceled by user!")
+                    NotificationCenter.default.post(name: NSNotification.Name("DropboxAuthCompleted"), object: nil, userInfo: ["error": "canceled"])
+                case .error(_, let description):
+                    print("Error: \(String(describing: description))")
+                    NotificationCenter.default.post(name: NSNotification.Name("DropboxAuthCompleted"), object: nil, userInfo: ["error": description ?? "unknown error"])
+                }
+            }
+        }
         
-        // Checking authorization for all services
-        Task.detached { [weak self] in
-            await self?.reathorizeAllServices()
+        for context in URLContexts {
+            // stop iterating after the first handle-able url
+            if DropboxClientsManager.handleRedirectURL(context.url, includeBackgroundClient: false, completion: oauthCompletion) { break }
         }
     }
 
@@ -59,6 +83,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private func reathorizeAllServices() async {
         for service in CloudServiceType.allCases {
             do {
+                print("Reauthorizing \(service)...")
                 try await cloudAuthService.reauthorize(for: service)
                 print("\(service) reauthorized successfully.")
             } catch {

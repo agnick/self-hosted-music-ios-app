@@ -44,33 +44,31 @@ final class CloudAuth {
     
     // MARK: - Variables
     private var authorizedService: CloudServiceType?
-    private let factories: [CloudServiceType: CloudWorkerFactory] = [
-        .googleDrive: GoogleDriveFactory(),
-        .dropbox: DropboxFactory(),
-    ]
+    private let workers: [CloudServiceType: CloudWorkerProtocol] = [
+            .googleDrive: GoogleDriveWorker(),
+            .dropbox: DropboxWorker(),
+        ]
     
     // MARK: - Lifecycle
     private init() {}
     
     // MARK: - Authorization methods
     func authorize(for service: CloudServiceType, vc: UIViewController? = nil) async throws {
-        guard let factory = factories[service] else {
-            throw NSError(domain: "Factory not found", code: 404)
+        guard let worker = workers[service] else {
+            throw NSError(domain: "Worker not found", code: 404)
         }
         
         if authorizedService == service {
             return
         }
         
-        let worker = factory.createWorker()
         try await worker.authorize(vc: vc)
-        currentWorker = worker
         authorizedService = service
     }
     
     func reauthorize(for service: CloudServiceType) async throws {
-        guard let worker = currentWorker, authorizedService == service else {
-            throw NSError(domain: "Worker not found or service not authorized", code: 404)
+        guard let worker = workers[service] else {
+            throw NSError(domain: "Worker not found", code: 404)
         }
         
         do {
@@ -82,13 +80,12 @@ final class CloudAuth {
     }
     
     func logout(from service: CloudServiceType) async throws {
-        guard let worker = currentWorker else {
+        guard let worker = workers[service] else {
             throw NSError(domain: "Worker not found", code: 404)
         }
         
         try await worker.logout()
         authorizedService = nil
-        currentWorker = nil
     }
     
     // MARK: - Utility methods
@@ -97,7 +94,7 @@ final class CloudAuth {
     }
     
     func getWorker(for service: CloudServiceType) -> CloudWorkerProtocol? {
-        return authorizedService == service ? currentWorker : nil
+        return workers[service]
     }
     
     func getAuthorizedService() -> CloudServiceType? {
