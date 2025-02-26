@@ -56,8 +56,14 @@ final class AudioPlayer: NSObject {
     
     func play(audioFile: AudioFile, playlist: [AudioFile]) {
         currentPlaylist = playlist
+        
+        guard
+            let url = URL(string: audioFile.playbackUrl)
+        else {
+            return
+        }
 
-        let playerItem = AVPlayerItem(url: audioFile.url)
+        let playerItem = AVPlayerItem(url: url)
         setupPlayer(with: playerItem, for: audioFile)
     }
     
@@ -82,7 +88,7 @@ final class AudioPlayer: NSObject {
     func playNextTrack() {
         guard 
             let currentTrack = currentTrack,
-            let currentIndex = currentPlaylist.firstIndex(where: { $0.url == currentTrack.url })
+            let currentIndex = currentPlaylist.firstIndex(where: { $0.playbackUrl == currentTrack.playbackUrl })
         else { return }
         
         let nextIndex = (currentIndex + 1) % currentPlaylist.count
@@ -96,7 +102,7 @@ final class AudioPlayer: NSObject {
         player = AVPlayer(playerItem: playerItem)
         currentTrack = audioFile
         
-        print("Playing \(audioFile.url)")
+        print("Playing \(audioFile.playbackUrl)")
         
         // KVO
         player?.addObserver(self, forKeyPath: "timeControlStatus", options: [.new, .old], context: nil)

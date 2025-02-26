@@ -36,16 +36,16 @@ final class AudioFilesOverviewScreenInteractor: AudioFilesOverviewScreenBusiness
     
     func downloadAudioFiles(_ request: AudioFilesOverviewScreenModel.DownloadAudio.Request) {
         let fileName = request.audioFile.name
-        let url = request.audioFile.url
-        let urlstring = url.absoluteString
+        let source = request.audioFile.downloadPath
         
-        cloudAudioService.setDownloadingState(for: request.rowIndex, isDownloading: true)
+        cloudAudioService.setDownloadingState(for: request.rowIndex, downloadState: .downloading)
         presenter.presentAudioFiles(AudioFilesOverviewScreenModel.FetchedFiles.Response(audioFiles: getAudioFiles()))
         
         Task {
             do {
-                let urlFile = try await cloudAudioService.downloadAudioFile(for : service, urlstring: urlstring, fileName: fileName)
-                presenter.presentDownloadedAudioFiles(AudioFilesOverviewScreenModel.DownloadAudio.Response(urlFile: urlFile))
+                let isDownloaded = try await cloudAudioService.downloadAudioFile(for: service, from: source, fileName: fileName)
+                cloudAudioService.setDownloadingState(for: request.rowIndex, downloadState: isDownloaded ? .downloaded : .failed)
+                presenter.presentDownloadedAudioFiles(AudioFilesOverviewScreenModel.DownloadAudio.Response(fileName: fileName, isDownloaded: isDownloaded))
             } catch {
                 presenter.presentError(AudioFilesOverviewScreenModel.Error.Response(error: error))
             }

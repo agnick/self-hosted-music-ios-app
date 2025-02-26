@@ -48,6 +48,7 @@ final class AudioFilesCell: UITableViewCell {
     private let audioNameLabel: UILabel = UILabel()
     private let audioSizeLabel: UILabel = UILabel()
     private let downloadButton: UIButton = UIButton(type: .system)
+    private let activityIndicator: UIActivityIndicatorView = UIActivityIndicatorView(style: .medium)
     
     // MARK: - Lifecycle
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -67,11 +68,12 @@ final class AudioFilesCell: UITableViewCell {
     }
     
     // MARK: - Public Methods
-    func configure(_ audioName: String, _ audioSize: Double, isDownloading: Bool) {
+    func configure(_ audioName: String, _ audioSize: Double, downloadState: DownloadState) {
         audioNameLabel.text = audioName
         audioSizeLabel.text = "\(String(format: "%.1f", audioSize)) MB"
-        downloadButton.isEnabled = !isDownloading
-        downloadButton.tintColor = isDownloading ? .systemGray : UIColor(color: .primary)
+        
+        downloadButton.isEnabled = downloadState == .notStarted
+        setDownloadButtonImage(downloadState)
     }
     
     // MARK: - Private Methods
@@ -97,6 +99,7 @@ final class AudioFilesCell: UITableViewCell {
         configureDownloadButton(wrap)
         configureImportOptionTitle(wrap)
         configureAudioSizeLabel(wrap)
+        configureActivityIndicator()
     }
     
     private func configureImportOptionImg(_ wrap: UIView) {
@@ -154,5 +157,36 @@ final class AudioFilesCell: UITableViewCell {
         downloadButton.pinCenterY(to: wrap)
         
         downloadButton.addTarget(self, action: #selector(downloadButtonTapped), for: .touchUpInside)
+    }
+    
+    private func configureActivityIndicator() {
+        downloadButton.addSubview(activityIndicator)
+        
+        activityIndicator.color = UIColor(color: .primary)
+        activityIndicator.hidesWhenStopped = true
+        
+        activityIndicator.pinCenterX(to: downloadButton)
+        activityIndicator.pinCenterY(to: downloadButton)
+    }
+    
+    // MARK: Utility private methods
+    private func setDownloadButtonImage(_ downloadState: DownloadState) {
+        switch downloadState {
+        case .downloaded:
+            activityIndicator.stopAnimating()
+            downloadButton.setImage(UIImage(image: .icAudioDownload), for: .normal)
+            downloadButton.tintColor = .systemGray
+        case .notStarted:
+            activityIndicator.stopAnimating()
+            downloadButton.setImage(UIImage(image: .icAudioDownload), for: .normal)
+            downloadButton.tintColor = UIColor(color: .primary)
+        case .downloading:
+            activityIndicator.startAnimating()
+            downloadButton.setImage(nil, for: .normal)
+        case .failed:
+            activityIndicator.stopAnimating()
+            downloadButton.setImage(UIImage(systemName: "xmark.circle"), for: .normal)
+            downloadButton.tintColor = UIColor(color: .primary)
+        }
     }
 }

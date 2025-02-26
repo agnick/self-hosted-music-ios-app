@@ -29,36 +29,34 @@ final class AudioImportInteractor: AudioImportBusinessLogic {
         _ request: AudioImportModel.CloudServiceSelection.Request
     ) {
         Task {
-            if cloudAuthService.isAuthorized(for: request.service) {
+            guard
+                let currentService = cloudAuthService.getAuthorizedService()
+            else {
+                try await cloudAuthService.authorize(for: request.service, vc: request.vc)
+                presenter
+                    .routeToAudioFilesOverviewScreen(
+                        service: request.service
+                    )
+                return
+            }
+            
+            if currentService != request.service {
+                presenter.presentAuthAlert(AudioImportModel.AuthAlert.Response(currentService: currentService, newService: request.service))
+            } else {
                 presenter
                     .routeToAudioFilesOverviewScreen(service: request.service)
-            } else {
-                do {
-                    try await cloudAuthService.authorize(for: request.service, vc: request.vc)
-                    presenter
-                        .routeToAudioFilesOverviewScreen(
-                            service: request.service
-                        )
-                } catch {
-                    presenter
-                        .presentError(
-                            AudioImportModel.Error.Response(error: error)
-                        )
-                }
             }
         }
     }
     
-    func checkAuthorizationForAllServices() async {
-        for service in CloudServiceType.allCases {
-            do {
-                try await cloudAuthService.reauthorize(for: service)
-                print("\(service) reauthorized successfully.")
-            } catch {
-                print(
-                    "Failed to reauthorize \(service): \(error.localizedDescription)"
+    func newAuthorize(_ request: AudioImportModel.NewAuth.Request) {
+        Task {
+            try await cloudAuthService.logout(from: request.currentService)
+            try await cloudAuthService.authorize(for: request.newService, vc: request.vc)
+            presenter
+                .routeToAudioFilesOverviewScreen(
+                    service: request.newService
                 )
-            }
         }
     }
     

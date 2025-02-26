@@ -50,7 +50,7 @@ final class AudioFilesOverviewScreenPresenter: AudioFilesOverviewScreenPresentat
             self.view?
                 .displayDownloadAudio(
                     AudioFilesOverviewScreenModel.DownloadAudio
-                        .ViewModel(urlFile: response.urlFile)
+                        .ViewModel(fileName: response.fileName, isDownloaded: response.isDownloaded)
                 )
         }
     }

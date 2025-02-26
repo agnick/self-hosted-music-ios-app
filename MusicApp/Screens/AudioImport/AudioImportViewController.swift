@@ -13,7 +13,6 @@ final class AudioImportViewController: UIViewController {
     enum Constants {
         // TitleLabel settings.
         static let titleLabelFontSize: CGFloat = 32
-        static let titleLabelTop: CGFloat = 100
         static let titleLabelLeading: CGFloat = 20
         
         // ImportOptionsTableView settings.
@@ -68,6 +67,27 @@ final class AudioImportViewController: UIViewController {
         present(documentPicker, animated: true)
     }
     
+    func displayAuthAlert(viewModel: AudioImportModel.AuthAlert.ViewModel) {
+        let actions = [
+            UIAlertAction(title: "Отмена", style: .default),
+            UIAlertAction(title: "Выйти", style: .default) { [weak self] _ in
+                guard
+                    let self = self
+                else {
+                    return
+                }
+                
+                interactor.newAuthorize(AudioImportModel.NewAuth.Request(currentService: viewModel.currentService, newService: viewModel.newService, vc: self))
+            }
+        ]
+        
+        self.presentAlert(
+            title: "Выйти из \(viewModel.currentService.displayName)?",
+            message: "Чтобы войти в другой облачный сервис, нужно выйти из текущего. Все загруженные файлы останутся доступны локально.",
+            actions: actions
+        )
+    }
+    
     func displayError(viewModel: AudioImportModel.Error.ViewModel) {
         let actions = [UIAlertAction(title: "OK", style: .default)]
         
@@ -96,7 +116,7 @@ final class AudioImportViewController: UIViewController {
         titleLabel.text = "Импорт музыки"
         
         // Set constraints to position the title label.
-        titleLabel.pinTop(to: view, Constants.titleLabelTop)
+        titleLabel.pinTop(to: view.safeAreaLayoutGuide.topAnchor)
         titleLabel.pinLeft(to: view, Constants.titleLabelLeading)
     }
     

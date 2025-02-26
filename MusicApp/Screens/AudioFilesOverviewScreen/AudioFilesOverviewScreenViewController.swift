@@ -12,7 +12,6 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
     enum Constants {
         // cloudServiceName settings.
         static let cloudServiceNameFontSize: CGFloat = 32
-        static let cloudServiceNameTop: CGFloat = 100
         static let cloudServiceNameLeading: CGFloat = 20
         
         // downloadAllBtn settings.
@@ -35,6 +34,9 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
         static let audioFilesCountFontSize: CGFloat = 12
         static let audioFilesCountBottom: CGFloat = 20
         static let audioFilesCountLeading: CGFloat = 20
+        
+        // toastLabel settings.
+        static let toastLabelFontSize: CGFloat = 14
     }
     
     // MARK: - Variables
@@ -48,6 +50,7 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
     )
     private let audioFilesTable: UITableView = UITableView(frame: .zero)
     private let audioFilesCount: UILabel = UILabel()
+    private let toastLabel: UILabel = UILabel()
     
     // MARK: - Lifecycle
     init(interactor: AudioFilesOverviewScreenBusinessLogic) {
@@ -103,7 +106,8 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
     func displayDownloadAudio(
         _ viewModel: AudioFilesOverviewScreenModel.DownloadAudio.ViewModel
     ) {
-        print("here")
+        audioFilesTable.reloadData()
+        print("Download state for file \(viewModel.fileName) is \(viewModel.isDownloaded)")
     }
     
     func displayError(
@@ -150,8 +154,7 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
         
         cloudServiceName
             .pinTop(
-                to: view,
-                Constants.cloudServiceNameTop
+                to: view.safeAreaLayoutGuide.topAnchor
             )
         cloudServiceName
             .pinLeft(
@@ -302,7 +305,7 @@ extension AudioFilesOverviewScreenViewController: UITableViewDataSource {
         
         let audioFile = interactor.getAudioFiles()[indexPath.row]
         
-        cell.configure(audioFile.name, audioFile.sizeInMB, isDownloading: audioFile.isDownloading)
+        cell.configure(audioFile.name, audioFile.sizeInMB, downloadState: audioFile.downloadState)
         cell.downloadAction = { [weak self] in
             self?.interactor
                 .downloadAudioFiles(

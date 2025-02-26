@@ -40,65 +40,28 @@ final class CloudAudioService {
         return fetchedFiles
     }
     
-    func downloadAudioFile(for service: CloudServiceType, urlstring: String, fileName: String) async throws -> URL {
+    func downloadAudioFile(for service: CloudServiceType, from source: String, fileName: String) async throws -> Bool {
         guard let worker = cloudAuthService.getWorker(for: service) else {
             throw NSError(domain: "Worker not found", code: 404)
         }
         
-        guard var request = await worker.getDownloadRequest(urlstring: urlstring) else {
-            throw NSError(domain: "Invalid download URL", code: 400, userInfo: nil)
+        guard service == cloudAuthService.getAuthorizedService() else {
+            throw NSError(domain: "Not authorized", code: 401)
         }
         
-        request.httpMethod = "GET"
-                
-        do {
-            let (data, response) = try await URLSession.shared.data(
-                for: request
-            )
-            
-            guard let response = response as? HTTPURLResponse else {
-                throw NSError(domain: "Invalid response", code: 500, userInfo: nil)
-            }
-            
-            guard response.statusCode == 200 else {
-                throw NSError(domain: "HTTP Error", code: response.statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed with status code: \(response.statusCode)"])
-            }
-            
-            if let contentType = response.value(forHTTPHeaderField: "Content-Type"), !contentType.contains("audio") {
-                throw NSError(domain: "Invalid file type", code: 415, userInfo: [NSLocalizedDescriptionKey: "Expected audio file, but got \(contentType)"])
-            }
-            
-            let documentsUrl = try FileManager.default.url(
-                for: .documentDirectory,
-                in: .userDomainMask,
-                appropriateFor: nil,
-                create: false
-            )
-            let destinationUrl = documentsUrl.appendingPathComponent(
-                fileName
-            )
-            
-            if FileManager().fileExists(atPath: destinationUrl.path) {
-                print(
-                    "File already exists [\(destinationUrl.path)], removing it."
-                )
-                try FileManager.default.removeItem(at: destinationUrl)
-            }
-            
-            try! data.write(to: destinationUrl)
-            print("Download finished: \(destinationUrl)")
-            
-            return destinationUrl
-        } catch {
-            print("Error downloading file: \(error.localizedDescription)")
-            throw error
+        guard
+            let _ = try await worker.downloadAudioFile(from: source, fileName: fileName)
+        else {
+            return false
         }
+        
+        return true
     }
         
     // MARK: - Utility Methods
-    func setDownloadingState(for rowIndex: Int, isDownloading: Bool) {
+    func setDownloadingState(for rowIndex: Int, downloadState: DownloadState) {
         if rowIndex < audioFiles.count {
-            audioFiles[rowIndex].isDownloading = isDownloading
+            audioFiles[rowIndex].downloadState = downloadState
         }
     }
     

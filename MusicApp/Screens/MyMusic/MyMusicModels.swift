@@ -189,6 +189,16 @@ enum MyMusicModel {
         }
     }
     
+    enum NotConnected {
+        struct Request {}
+        
+        struct Response {}
+        
+        struct ViewModel {
+            let message: String
+        }
+    }
+    
     enum Error {
         struct Request {}
         

@@ -39,11 +39,13 @@ enum AudioFilesOverviewScreenModel {
         }
         
         struct Response {
-            let urlFile: URL
+            let fileName: String
+            let isDownloaded: Bool
         }
         
         struct ViewModel {
-            let urlFile: URL
+            let fileName: String
+            let isDownloaded: Bool
         }
     }
     

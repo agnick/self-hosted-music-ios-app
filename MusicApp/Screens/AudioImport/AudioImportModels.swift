@@ -33,6 +33,35 @@ enum AudioImportModel {
         }
     }
     
+    enum NewAuth {
+        struct Request {
+            let currentService: CloudServiceType
+            let newService: CloudServiceType
+            let vc: UIViewController
+        }
+        
+        struct Response {
+        }
+        
+        struct ViewModel {
+        }
+    }
+    
+    enum AuthAlert {
+        struct Request {
+        }
+        
+        struct Response {
+            let currentService: CloudServiceType
+            let newService: CloudServiceType
+        }
+        
+        struct ViewModel {
+            let currentService: CloudServiceType
+            let newService: CloudServiceType
+        }
+    }
+    
     enum LocalFiles {
         struct Request {
             let urls: [URL]

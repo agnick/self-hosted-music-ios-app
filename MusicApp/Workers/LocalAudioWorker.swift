@@ -40,11 +40,12 @@ final class LocalAudioWorker {
                     
                     let audioFile = AudioFile(
                         name: file.lastPathComponent,
-                        url: file,
+                        artistName: file.lastPathComponent,
                         sizeInMB: fileSize / (1024 * 1024),
                         durationInSeconds: durationInSeconds.isNaN ? 0 : durationInSeconds,
-                        artistName: file.lastPathComponent,
-                        isDownloading: false,
+                        downloadPath: file.path,
+                        playbackUrl: file.absoluteString,
+                        downloadState: .downloaded,
                         source: .local
                     )
                     

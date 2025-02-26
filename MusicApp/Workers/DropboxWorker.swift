@@ -123,18 +123,18 @@ final class DropboxWorker: CloudWorkerProtocol {
                 
                 let tempLink = try await client.files.getTemporaryLink(path: pathToFile).response()
                 
-                guard
-                    let url = URL(string: tempLink.link)
-                else {
-                    continue
-                }
-                
-                let audioFile = AudioFile(name: fileEntry.name, url: url, sizeInMB: Double(fileEntry.size) / (1024 * 1024), durationInSeconds: 0, artistName: entry.name, source: .dropbox)
+                let audioFile = AudioFile(
+                    name: fileEntry.name,
+                    artistName: fileEntry.name,
+                    sizeInMB: Double(fileEntry.size) / (1024 * 1024),
+                    durationInSeconds: 0,
+                    downloadPath: pathToFile,
+                    playbackUrl: tempLink.link,
+                    source: .dropbox
+                )
                 
                 audioFiles.append(audioFile)
             }
-            
-            print(response)
         } catch {
             print(error)
         }
@@ -156,8 +156,7 @@ final class DropboxWorker: CloudWorkerProtocol {
         guard
             let token = DropboxClientsManager.authorizedClient?.accessTokenProvider.accessToken
         else {
-            print("no token")
-            return
+            throw NSError(domain: "Token not found", code: 404)
         }
     
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -176,7 +175,7 @@ final class DropboxWorker: CloudWorkerProtocol {
     func logout() async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             DispatchQueue.main.async {
-                DropboxClientsManager.resetClients()
+                DropboxClientsManager.unlinkClients()
                 
                 if DropboxClientsManager.authorizedClient == nil {
                     continuation.resume(returning: ())
@@ -188,7 +187,38 @@ final class DropboxWorker: CloudWorkerProtocol {
         
     }
     
-    func getDownloadRequest(urlstring: String) -> URLRequest? {
-        return nil
+    func downloadAudioFile(from pathToFile: String, fileName: String) async throws -> URL? {
+        guard let client = DropboxClientsManager.authorizedClient else {
+            throw NSError(domain: "DropboxAuth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authorized"])
+        }
+        
+        let fileManager = FileManager.default
+        let documentsUrl = try FileManager.default.url(
+            for: .documentDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: false
+        )
+        let destinationUrl = documentsUrl.appendingPathComponent(
+            fileName
+        )
+        
+        if FileManager().fileExists(atPath: destinationUrl.path) {
+            print(
+                "File already exists [\(destinationUrl.path)], removing it."
+            )
+            
+            try FileManager.default.removeItem(at: destinationUrl)
+        }
+        
+        do {
+            let response = try await client.files.download(path: pathToFile, overwrite: true, destination: destinationUrl).response()
+            
+            print(response)
+            return destinationUrl
+        } catch {
+            print(error)
+            throw error
+        }
     }
 }

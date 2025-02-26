@@ -86,6 +86,7 @@ final class CloudAuth {
         
         try await worker.logout()
         authorizedService = nil
+        print("Successfully logged out of \(service.displayName)")
     }
     
     // MARK: - Utility methods

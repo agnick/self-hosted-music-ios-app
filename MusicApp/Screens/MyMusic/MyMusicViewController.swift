@@ -14,7 +14,6 @@ final class MyMusicViewController: UIViewController {
     enum Constants {
         // titleLabel settings.
         static let titleLabelFontSize: CGFloat = 32
-        static let titleLabelTop: CGFloat = 100
         static let titleLabelLeading: CGFloat = 20
         
         // segmentedControl settings.
@@ -55,6 +54,11 @@ final class MyMusicViewController: UIViewController {
         
         // activityIndicator settings.
         static let activityIndicatorTop: CGFloat = 50
+        
+        // notConnectedLabel settings.
+        static let notConnectedLabelFontSize: CGFloat = 15
+        static let notConnectedLabelOffset: CGFloat = 20
+        static let notConnectedLabelNumberOfLines: Int = 0
     }
     
     // MARK: - Variables
@@ -72,6 +76,7 @@ final class MyMusicViewController: UIViewController {
     private var pickAllButton: UIButton?
     // Labels.
     private let titleLabel: UILabel = UILabel()
+    private let notConnectedLabel: UILabel = UILabel()
     // Other components.
     private let segmentedControl: UISegmentedControl = UISegmentedControl()
     private let searchBar: UISearchBar = UISearchBar(frame: .zero)
@@ -98,6 +103,10 @@ final class MyMusicViewController: UIViewController {
         
         // Configure all UI elements and layout.
         configureUI()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         
         // Load initial data about the connected cloud service.
         interactor.loadStart(MyMusicModel.Start.Request())
@@ -164,6 +173,8 @@ final class MyMusicViewController: UIViewController {
     func displayPreLoading(_ viewModel: MyMusicModel.PreLoading.ViewModel) {
         // Block UI interactions while loading new audio files.
         activateButtons(viewModel.buttonsState)
+        
+        notConnectedLabel.isHidden = true
         
         // Reload the table view to reflect the cleared state.
         audioTable.reloadData()
@@ -235,6 +246,12 @@ final class MyMusicViewController: UIViewController {
         audioTable.reloadRows(at: [indexPath], with: .automatic)
     }
     
+    func displayNotConnectedMessage(_ viewModel: MyMusicModel.NotConnected.ViewModel) {
+        audioTable.reloadData()
+        notConnectedLabel.text = viewModel.message
+        notConnectedLabel.isHidden = false
+    }
+    
     // MARK: - Private methods for UI configuring
     private func configureUI() {
         view.backgroundColor = UIColor(color: .background)
@@ -247,11 +264,10 @@ final class MyMusicViewController: UIViewController {
         configureButtonStack()
         configureAudioTable()
         configureActivityIndicator()
+        configureNotConnectedLabel()
     }
     
-    private func configureNavigationBar() {
-        navigationController?.navigationBar.prefersLargeTitles = true
-        
+    private func configureNavigationBar() {        
         let sortButton = UIBarButtonItem(title: "Сортировать", style: .plain, target: self, action: #selector(sortButtonTapped))
         
         let editButton = UIBarButtonItem(title: "Изменить", style: .plain, target: self, action: #selector(editButtonTapped))
@@ -276,7 +292,7 @@ final class MyMusicViewController: UIViewController {
         titleLabel.text = "Моя музыка"
         
         // Set constraints to position the title label.
-        titleLabel.pinTop(to: view, Constants.titleLabelTop)
+        titleLabel.pinTop(to: view.safeAreaLayoutGuide.topAnchor)
         titleLabel.pinLeft(to: view, Constants.titleLabelLeading)
     }
     
@@ -411,6 +427,25 @@ final class MyMusicViewController: UIViewController {
         // Set constraints to position the indicator.
         activityIndicator.pinTop(to: buttonStackView.bottomAnchor, Constants.activityIndicatorTop)
         activityIndicator.pinCenterX(to: view)
+    }
+    
+    private func configureNotConnectedLabel() {
+        view.addSubview(notConnectedLabel)
+        
+        // Setting the font and text color.
+        notConnectedLabel.font =
+            .systemFont(
+                ofSize: Constants.notConnectedLabelFontSize,
+                weight: .medium
+            )
+        notConnectedLabel.textColor = .lightGray
+        notConnectedLabel.textAlignment = .center
+        notConnectedLabel.numberOfLines = Constants.notConnectedLabelNumberOfLines
+        notConnectedLabel.lineBreakMode = .byWordWrapping
+        notConnectedLabel.isHidden = true
+        
+        notConnectedLabel.pinCenterY(to: view)
+        notConnectedLabel.pinHorizontal(to: view, Constants.notConnectedLabelOffset)
     }
     
     // MARK: - Private method to configure segment

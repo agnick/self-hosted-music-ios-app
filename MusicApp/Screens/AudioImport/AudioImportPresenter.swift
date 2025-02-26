@@ -18,6 +18,12 @@ final class AudioImportPresenter: AudioImportPresentationLogic {
         }
     }
     
+    func presentAuthAlert(_ response: AudioImportModel.AuthAlert.Response) {
+        DispatchQueue.main.async {
+            self.view?.displayAuthAlert(viewModel: AudioImportModel.AuthAlert.ViewModel(currentService: response.currentService, newService: response.newService))
+        }
+    }
+    
     func presentError(_ response: AudioImportModel.Error.Response) {
         DispatchQueue.main.async {
             print("Error: \(response.error.localizedDescription)")

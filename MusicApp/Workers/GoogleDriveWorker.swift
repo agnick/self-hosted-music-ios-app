@@ -121,19 +121,21 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
         var audioFiles: [AudioFile] = []
         
         for file in files {
-            guard let name = file.name,
-                  let webContentLink = file.webContentLink,
-                  let fileSize = file.size?.doubleValue,
-                  let url = URL(string: webContentLink) else {
+            guard
+                let name = file.name,
+                let webContentLink = file.webContentLink,
+                let fileSize = file.size?.doubleValue
+            else {
                 continue
             }
             
             let audioFile = AudioFile(
                 name: name,
-                url: url,
-                sizeInMB: fileSize / (1024 * 1024),
-                durationInSeconds: nil,
                 artistName: name,
+                sizeInMB: fileSize / (1024 * 1024),
+                durationInSeconds: 0,
+                downloadPath: webContentLink,
+                playbackUrl: webContentLink,
                 source: .googleDrive
             )
             
@@ -141,6 +143,57 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
         }
         
         return audioFiles
+    }
+    
+    func downloadAudioFile(from urlString: String, fileName: String) async throws -> URL? {
+        guard var request = await getDownloadRequest(from: urlString) else {
+            throw NSError(domain: "Invalid download URL", code: 400, userInfo: nil)
+        }
+        
+        request.httpMethod = "GET"
+                
+        do {
+            let (data, response) = try await URLSession.shared.data(
+                for: request
+            )
+            
+            guard let response = response as? HTTPURLResponse else {
+                throw NSError(domain: "Invalid response", code: 500, userInfo: nil)
+            }
+            
+            guard response.statusCode == 200 else {
+                throw NSError(domain: "HTTP Error", code: response.statusCode, userInfo: [NSLocalizedDescriptionKey: "Failed with status code: \(response.statusCode)"])
+            }
+            
+            if let contentType = response.value(forHTTPHeaderField: "Content-Type"), !contentType.contains("audio") {
+                throw NSError(domain: "Invalid file type", code: 415, userInfo: [NSLocalizedDescriptionKey: "Expected audio file, but got \(contentType)"])
+            }
+            
+            let documentsUrl = try FileManager.default.url(
+                for: .documentDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: false
+            )
+            let destinationUrl = documentsUrl.appendingPathComponent(
+                fileName
+            )
+            
+            if FileManager().fileExists(atPath: destinationUrl.path) {
+                print(
+                    "File already exists [\(destinationUrl.path)], removing it."
+                )
+                try FileManager.default.removeItem(at: destinationUrl)
+            }
+            
+            try data.write(to: destinationUrl)
+            print("Download finished: \(destinationUrl)")
+            
+            return destinationUrl
+        } catch {
+            print("Error downloading file: \(error.localizedDescription)")
+            throw error
+        }
     }
     
     func getAccessToken() async throws -> String {
@@ -151,9 +204,26 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
         return accessToken
     }
     
-    func getDownloadRequest(urlstring: String) async -> URLRequest? {
+    // MARK: - Private methods
+    func extractFileId(from url: String) -> String? {
+        let regex = try! NSRegularExpression(
+            pattern: "id=([a-zA-Z0-9_-]+)",
+            options: []
+        )
+        
+        let range = NSRange(location: 0, length: url.utf16.count)
+        if let match = regex.firstMatch(in: url, options: [], range: range) {
+            if let idRange = Range(match.range(at: 1), in: url) {
+                return String(url[idRange])
+            }
+        }
+        
+        return nil
+    }
+    
+    private func getDownloadRequest(from urlString: String) async -> URLRequest? {
         let fileId = extractFileId(
-            from: urlstring
+            from: urlString
         )
         
         guard let fileId = fileId else {
@@ -173,22 +243,5 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
         }
         
         return request
-    }
-    
-    // MARK: - Private methods
-    func extractFileId(from url: String) -> String? {
-        let regex = try! NSRegularExpression(
-            pattern: "id=([a-zA-Z0-9_-]+)",
-            options: []
-        )
-        
-        let range = NSRange(location: 0, length: url.utf16.count)
-        if let match = regex.firstMatch(in: url, options: [], range: range) {
-            if let idRange = Range(match.range(at: 1), in: url) {
-                return String(url[idRange])
-            }
-        }
-        
-        return nil
     }
 }

@@ -10,11 +10,12 @@ import Foundation
 // Structure for storing audio file details.
 struct AudioFile {
     let name: String
-    let url: URL
+    let artistName: String
     let sizeInMB: Double
     let durationInSeconds: Double?
-    let artistName: String
-    var isDownloading: Bool = false
+    let downloadPath: String
+    let playbackUrl: String
+    var downloadState: DownloadState = .notStarted
     let source: AudioSource
 }
 

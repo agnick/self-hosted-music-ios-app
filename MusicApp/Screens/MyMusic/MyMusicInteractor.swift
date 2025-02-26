@@ -40,7 +40,7 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
     func fetchCloudAudioFiles(_ request: MyMusicModel.FetchedFiles.Request) {        
         Task {
             guard let service = cloudAuthService.getAuthorizedService() else {
-                presenter.presentError(MyMusicModel.Error.Response(error: NSError(domain: "Not authorized", code: 401, userInfo: nil)))
+                presenter.presentNotConnectedMessage()
                 return
             }
             
@@ -71,14 +71,19 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
     func updateAudioFiles(_ request: MyMusicModel.UpdateAudio.Request) {
         currentAudioFiles.removeAll()
         
-        presenter.presentPreLoading()
-        
         let segmentIndex = request.selectedSegmentIndex
         
         switch segmentIndex {
         case 0:
+            guard let _ = cloudAuthService.getAuthorizedService() else {
+                presenter.presentNotConnectedMessage()
+                return
+            }
+            
+            presenter.presentPreLoading()
             fetchCloudAudioFiles(MyMusicModel.FetchedFiles.Request())
         case 1:
+            presenter.presentPreLoading()
             fetchLocalAudioFiles(MyMusicModel.FetchedFiles.Request())
         default:
             currentAudioFiles = []
@@ -132,7 +137,7 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
             return
         }
                 
-        playTrack(audioFile: firstAudioFile)
+        audioPlayerService.play(audioFile: firstAudioFile, playlist: currentAudioFiles)
     }
     
     func playShuffle() {
@@ -152,7 +157,7 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
         if (!isEditing) {
             let selectedTrack = currentAudioFiles[request.index]
             
-            playTrack(audioFile: selectedTrack)
+            audioPlayerService.play(audioFile: selectedTrack, playlist: currentAudioFiles)
         }
     }
     
@@ -215,37 +220,6 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
     }
     
     private func uniqueTrackID(for audioFile: AudioFile) -> String {
-        return "\(audioFile.source.rawValue)-\(audioFile.url.absoluteString)"
-    }
-    
-    private func getPlayableUrl(for audioFile: AudioFile) -> URL? {
-        switch audioFile.source {
-        case .local:
-            return audioFile.url
-        case .googleDrive:
-            return audioFile.url
-        case .dropbox:
-            return audioFile.url
-        }
-    }
-    
-    private func playTrack(audioFile: AudioFile) {
-        guard
-            let playableUrl = getPlayableUrl(for: audioFile)
-        else {
-            presenter.presentError(MyMusicModel.Error.Response(error: NSError(domain: "PlaybackError", code: 1001, userInfo: [NSLocalizedDescriptionKey: "Не удалось получить URL для воспроизведения."])))
-            return
-        }
-        
-        let playableAudioFile = AudioFile(
-            name: audioFile.name,
-            url: playableUrl,
-            sizeInMB: audioFile.sizeInMB,
-            durationInSeconds: audioFile.durationInSeconds,
-            artistName: audioFile.artistName,
-            source: audioFile.source
-        )
-        
-        audioPlayerService.play(audioFile: playableAudioFile, playlist: currentAudioFiles)
+        return "\(audioFile.source.rawValue)-\(audioFile.playbackUrl)"
     }
 }

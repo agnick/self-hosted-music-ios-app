@@ -12,6 +12,6 @@ protocol CloudWorkerProtocol {
     func reauthorize() async throws
     func logout() async throws
     func fetchAudio() async throws -> [AudioFile]
-    func getDownloadRequest(urlstring: String) async -> URLRequest?
+    func downloadAudioFile(from: String, fileName: String) async throws -> URL?
     func getAccessToken() async throws -> String
 }

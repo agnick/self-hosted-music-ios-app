@@ -97,6 +97,14 @@ final class MyMusicPresenter: MyMusicPresentationLogic {
         }
     }
     
+    func presentNotConnectedMessage() {
+        DispatchQueue.main.async {
+            let message = "Авторизируйтесь в облачном сервисе для стриминга музыки"
+            
+            self.view?.displayNotConnectedMessage(MyMusicModel.NotConnected.ViewModel(message: message))
+        }
+    }
+    
     func routeTo() {
         view?.navigationController?
             .pushViewController(UIViewController(), animated: true)

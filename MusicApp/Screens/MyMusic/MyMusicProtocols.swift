@@ -45,6 +45,7 @@ protocol MyMusicPresentationLogic {
     func presentSortOptions()
     func presentCellData(_ response: MyMusicModel.CellData.Response)
     func presentTrackSelection(_ response: MyMusicModel.TrackSelection.Response)
+    func presentNotConnectedMessage()
     func presentError(_ response: MyMusicModel.Error.Response)
     
     func routeTo()
