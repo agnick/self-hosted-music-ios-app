@@ -62,4 +62,11 @@ final class LocalAudioWorker {
         
         return audioFiles
     }
+    
+    func deleteAudioFile(filePath: String) throws {
+        let fileURL = URL(fileURLWithPath: filePath)
+        let fileManager = FileManager.default
+        
+        try fileManager.removeItem(at: fileURL)
+    }
 }

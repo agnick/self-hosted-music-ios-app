@@ -27,7 +27,7 @@ final class DropboxWorker: CloudWorkerProtocol {
         
         let scopeRequest = ScopeRequest(
             scopeType: .user,
-            scopes: ["account_info.read", "files.metadata.read", "files.content.read"],
+            scopes: ["account_info.read", "files.metadata.read", "files.content.read", "files.content.write"],
             includeGrantedScopes: false
         )
         
@@ -142,16 +142,6 @@ final class DropboxWorker: CloudWorkerProtocol {
         return audioFiles
     }
     
-    func getAccessToken() async throws -> String {
-        guard
-            let token = DropboxClientsManager.authorizedClient?.accessTokenProvider.accessToken
-        else {
-            throw NSError(domain: "Token not found", code: 404)
-        }
-        
-        return token
-    }
-    
     func reauthorize() async throws {
         guard
             let token = DropboxClientsManager.authorizedClient?.accessTokenProvider.accessToken
@@ -192,7 +182,6 @@ final class DropboxWorker: CloudWorkerProtocol {
             throw NSError(domain: "DropboxAuth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authorized"])
         }
         
-        let fileManager = FileManager.default
         let documentsUrl = try FileManager.default.url(
             for: .documentDirectory,
             in: .userDomainMask,
@@ -220,5 +209,30 @@ final class DropboxWorker: CloudWorkerProtocol {
             print(error)
             throw error
         }
+    }
+    
+    func deleteAudioFile(from path: String) async throws {
+        guard let client = DropboxClientsManager.authorizedClient else {
+            throw NSError(domain: "DropboxAuth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Not authorized"])
+        }
+        
+        do {
+            let response = try await client.files.deleteV2(path: path).response()
+            
+            print(response)
+        } catch {
+            print(error)
+            return
+        }
+    }
+    
+    func getAccessToken() async throws -> String {
+        guard
+            let token = DropboxClientsManager.authorizedClient?.accessTokenProvider.accessToken
+        else {
+            throw NSError(domain: "Token not found", code: 404)
+        }
+        
+        return token
     }
 }

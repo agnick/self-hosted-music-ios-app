@@ -71,6 +71,8 @@ final class MyMusicViewController: UIViewController {
     // Buttons.
     private var sortButton: UIBarButtonItem?
     private var editButton: UIBarButtonItem?
+    private var deleteButton: UIBarButtonItem?
+    private var addButton: UIBarButtonItem?
     private var playButton: UIButton?
     private var shuffleButton: UIButton?
     private var pickAllButton: UIButton?
@@ -126,7 +128,7 @@ final class MyMusicViewController: UIViewController {
     }
     
     @objc private func deleteSelectedTracks() {
-        interactor.deleteTracks(MyMusicModel.Delete.Request(selectedSegmentIndex: segmentedControl.selectedSegmentIndex))
+        interactor .handleDeleteSelectedTracks(MyMusicModel.HandleDelete.Request(selectedSegmentIndex: segmentedControl.selectedSegmentIndex))
     }
     
     @objc private func addTrackToPlaylist() {
@@ -149,6 +151,7 @@ final class MyMusicViewController: UIViewController {
         interactor.playShuffle()
     }
     
+    // MARK: - Edit actions
     @objc private func pickAllButtonPressed() {
         interactor.pickAll(MyMusicModel.PickTracks.Request())
     }
@@ -198,8 +201,10 @@ final class MyMusicViewController: UIViewController {
     
     func displayPickAll(_ viewModel: MyMusicModel.PickTracks.ViewModel) {
         pickAllButton?.setTitle(viewModel.buttonTitle, for: .normal)
-        
         audioTable.reloadData()
+        
+        deleteButton?.isEnabled = !viewModel.state
+        addButton?.isEnabled = !viewModel.state
     }
     
     func displaySortOptions(_ viewModel: MyMusicModel.SortOptions.ViewModel) {
@@ -223,6 +228,23 @@ final class MyMusicViewController: UIViewController {
         present(alert, animated: true)
     }
     
+    func displayDeleteAlert(_ viewModel: MyMusicModel.DeleteAlert.ViewModel) {
+        let actions = [
+            UIAlertAction(title: "Отмена", style: .default),
+            UIAlertAction(title: "Удалить", style: .default) { [weak self] _ in
+                guard
+                    let self = self
+                else {
+                    return
+                }
+                
+                self.interactor.deleteSelectedTracks(MyMusicModel.Delete.Request(service: viewModel.service))
+            }
+        ]
+        
+        self.presentAlert(title: viewModel.alertTitle, message: viewModel.alertMessage, actions: actions)
+    }
+    
     func displayError(
         _ viewModel: MyMusicModel.Error.ViewModel
     ) {
@@ -244,6 +266,9 @@ final class MyMusicViewController: UIViewController {
     func displayTrackSelection(_ viewModel: MyMusicModel.TrackSelection.ViewModel) {
         let indexPath = IndexPath(row: viewModel.index, section: 0)
         audioTable.reloadRows(at: [indexPath], with: .automatic)
+        
+        deleteButton?.isEnabled = viewModel.isSelected
+        addButton?.isEnabled = viewModel.isSelected
     }
     
     func displayNotConnectedMessage(_ viewModel: MyMusicModel.NotConnected.ViewModel) {
@@ -267,7 +292,7 @@ final class MyMusicViewController: UIViewController {
         configureNotConnectedLabel()
     }
     
-    private func configureNavigationBar() {        
+    private func configureNavigationBar() {
         let sortButton = UIBarButtonItem(title: "Сортировать", style: .plain, target: self, action: #selector(sortButtonTapped))
         
         let editButton = UIBarButtonItem(title: "Изменить", style: .plain, target: self, action: #selector(editButtonTapped))
@@ -474,15 +499,21 @@ final class MyMusicViewController: UIViewController {
         buttonStackView.isHidden = isEditing
         
         if isEditing {
-            let deleteButton = UIBarButtonItem(title: "Удалить", style: .plain, target: self, action: #selector(deleteSelectedTracks))
-            let addButton = UIBarButtonItem(title: "Добавить", style: .plain, target: self, action: #selector(addTrackToPlaylist))
+            deleteButton = UIBarButtonItem(title: "Удалить", style: .plain, target: self, action: #selector(deleteSelectedTracks))
+            addButton = UIBarButtonItem(title: "Добавить", style: .plain, target: self, action: #selector(addTrackToPlaylist))
             
-            navigationItem.leftBarButtonItems = [deleteButton, addButton]
+            deleteButton?.isEnabled = !isEditing
+            addButton?.isEnabled = !isEditing
+            
+            navigationItem.leftBarButtonItems = [deleteButton, addButton].compactMap { $0 }
             navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Готово", style: .plain, target: self, action: #selector(editButtonTapped))
         } else {
             navigationItem.leftBarButtonItems = nil
             navigationItem.leftBarButtonItem = sortButton
             navigationItem.rightBarButtonItem = editButton
+            
+            deleteButton = nil
+            addButton = nil
         }
     }
 }
@@ -541,7 +572,8 @@ extension MyMusicViewController: UISearchBarDelegate {
 extension MyMusicViewController: FetchedAudioCellDelegate {
     func didTapCheckBox(in cell: FetchedAudioCell) {
         guard let indexPath = audioTable.indexPath(for: cell) else { return }
-                
+        
+        
         interactor.toggleTrackSelection(MyMusicModel.TrackSelection.Request(index: indexPath.row))
     }
 }

@@ -20,4 +20,14 @@ final class LocalAudioService {
             throw error
         }
     }
+    
+    // MARK: - File Deleting
+    func deleteAudioFile(filePath: String) throws {
+        do {
+            try localAudioWorker.deleteAudioFile(filePath: filePath)
+            print("File \(filePath) deleted")
+        } catch {
+            print("Error: \(error)")
+        }
+    }
 }

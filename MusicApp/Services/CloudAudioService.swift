@@ -57,6 +57,18 @@ final class CloudAudioService {
         
         return true
     }
+    
+    func deleteAudioFile(for service: CloudServiceType, from source: String) async throws {
+        guard let worker = cloudAuthService.getWorker(for: service) else {
+            throw NSError(domain: "Worker not found", code: 404)
+        }
+        
+        guard service == cloudAuthService.getAuthorizedService() else {
+            throw NSError(domain: "Not authorized", code: 401)
+        }
+        
+        try await worker.deleteAudioFile(from: source)
+    }
         
     // MARK: - Utility Methods
     func setDownloadingState(for rowIndex: Int, downloadState: DownloadState) {

@@ -79,9 +79,36 @@ enum MyMusicModel {
         }
     }
     
-    enum Delete {
+    enum HandleDelete {
         struct Request {
             let selectedSegmentIndex: Int
+        }
+        
+        struct Response {
+        }
+        
+        struct ViewModel {
+        }
+    }
+    
+    enum DeleteAlert {
+        struct Request {
+        }
+        
+        struct Response {
+            let service: CloudServiceType?
+        }
+        
+        struct ViewModel {
+            let alertTitle: String
+            let alertMessage: String
+            let service: CloudServiceType?
+        }
+    }
+    
+    enum Delete {
+        struct Request {
+            let service: CloudServiceType?
         }
         
         struct Response {
@@ -114,6 +141,7 @@ enum MyMusicModel {
         
         struct ViewModel {
             let buttonTitle: String
+            let state: Bool
         }
     }
     
@@ -182,10 +210,12 @@ enum MyMusicModel {
         
         struct Response {
             let index: Int
+            let selectedCount: Int
         }
         
         struct ViewModel {
             let index: Int
+            let isSelected: Bool
         }
     }
     

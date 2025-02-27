@@ -7,7 +7,6 @@
 
 import GoogleSignIn
 import GoogleAPIClientForREST
-import AVFoundation
 
 final class GoogleDriveWorker: CloudWorkerProtocol {
     // MARK: - Variables
@@ -196,6 +195,31 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
         }
     }
     
+    func deleteAudioFile(from urlString: String) async throws {
+        guard
+            let fileId = extractFileId(from: urlString)
+        else {
+            throw NSError(
+                domain: "GoogleDriveWorker",
+                code: 400,
+                userInfo: [NSLocalizedDescriptionKey: "Не удалось извлечь идентификатор файла из URL"]
+            )
+        }
+        
+        let query = GTLRDriveQuery_FilesDelete.query(withFileId: fileId)
+        
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            driveService.executeQuery(query) { _, _, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    print("Файл \(fileId) успешно удален")
+                    continuation.resume()
+                }
+            }
+        }
+    }
+    
     func getAccessToken() async throws -> String {
         guard let accessToken = GIDSignIn.sharedInstance.currentUser?.authentication.accessToken else {
             throw NSError(domain: "Token not found", code: 404)
@@ -205,11 +229,16 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
     }
     
     // MARK: - Private methods
-    func extractFileId(from url: String) -> String? {
-        let regex = try! NSRegularExpression(
-            pattern: "id=([a-zA-Z0-9_-]+)",
-            options: []
-        )
+    private func extractFileId(from url: String) -> String? {
+        guard
+            let regex = try? NSRegularExpression(
+                pattern: "id=([a-zA-Z0-9_-]+)",
+                options: []
+            )
+        else {
+            return nil
+        }
+                
         
         let range = NSRange(location: 0, length: url.utf16.count)
         if let match = regex.firstMatch(in: url, options: [], range: range) {

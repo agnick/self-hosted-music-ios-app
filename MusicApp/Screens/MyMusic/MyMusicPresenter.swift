@@ -51,7 +51,7 @@ final class MyMusicPresenter: MyMusicPresentationLogic {
         DispatchQueue.main.async {
             let buttonTitle = response.state ? "Выбрать все" : "Отменить"
             
-            self.view?.displayPickAll(MyMusicModel.PickTracks.ViewModel(buttonTitle: buttonTitle))
+            self.view?.displayPickAll(MyMusicModel.PickTracks.ViewModel(buttonTitle: buttonTitle, state: response.state))
         }
     }
     
@@ -81,7 +81,27 @@ final class MyMusicPresenter: MyMusicPresentationLogic {
     
     func presentTrackSelection(_ response: MyMusicModel.TrackSelection.Response) {
         DispatchQueue.main.async {
-            self.view?.displayTrackSelection(MyMusicModel.TrackSelection.ViewModel(index: response.index))
+            self.view?.displayTrackSelection(MyMusicModel.TrackSelection.ViewModel(index: response.index, isSelected: response.selectedCount > 0))
+        }
+    }
+    
+    func presentNotConnectedMessage() {
+        DispatchQueue.main.async {
+            let message = "Авторизируйтесь в облачном сервисе для стриминга музыки"
+            
+            self.view?.displayNotConnectedMessage(MyMusicModel.NotConnected.ViewModel(message: message))
+        }
+    }
+    
+    func presentDeleteAlert(_ response: MyMusicModel.DeleteAlert.Response) {
+        DispatchQueue.main.async {
+            let alertMessage = "Это действие нельзя будет отменить"
+            
+            if let cloudService = response.service {
+                self.view?.displayDeleteAlert(MyMusicModel.DeleteAlert.ViewModel(alertTitle: "Вы уверены что хотите удалить выбранные треки из вашего хранилища \(cloudService.displayName)?", alertMessage: alertMessage, service: cloudService))
+            }
+            
+            self.view?.displayDeleteAlert(MyMusicModel.DeleteAlert.ViewModel(alertTitle: "Вы уверены что хотите удалить выбранные треки из файлов устройства?", alertMessage: alertMessage, service: nil))
         }
     }
     
@@ -94,14 +114,6 @@ final class MyMusicPresenter: MyMusicPresentationLogic {
                             errorDescription: response.error.localizedDescription
                         )
                 )
-        }
-    }
-    
-    func presentNotConnectedMessage() {
-        DispatchQueue.main.async {
-            let message = "Авторизируйтесь в облачном сервисе для стриминга музыки"
-            
-            self.view?.displayNotConnectedMessage(MyMusicModel.NotConnected.ViewModel(message: message))
         }
     }
     

@@ -33,6 +33,7 @@
 		261F542C2D4E5FB400FA94F2 /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261F542B2D4E5FAE00FA94F2 /* MiniPlayerView.swift */; };
 		261F542F2D4E6BCD00FA94F2 /* MiniPlayerViewFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261F542E2D4E6BC500FA94F2 /* MiniPlayerViewFactory.swift */; };
 		261F54312D4E9F5900FA94F2 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 261F54302D4E9F4E00FA94F2 /* README.md */; };
+		263878962D6F65F000AB5104 /* GoogleDriveClient in Frameworks */ = {isa = PBXBuildFile; productRef = 263878952D6F65F000AB5104 /* GoogleDriveClient */; };
 		2646EE482D2EBB75002E7FFA /* AudioFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2646EE472D2EBB6D002E7FFA /* AudioFile.swift */; };
 		2646EE4A2D2EBCDB002E7FFA /* CloudServiceType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2646EE492D2EBCD9002E7FFA /* CloudServiceType.swift */; };
 		2646EE4D2D2EE20D002E7FFA /* CloudAudioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2646EE4C2D2EE201002E7FFA /* CloudAudioService.swift */; };
@@ -174,6 +175,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0EFCE0DA08E0C9263A71D54D /* Pods_MusicApp.framework in Frameworks */,
+				263878962D6F65F000AB5104 /* GoogleDriveClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -472,6 +474,9 @@
 				Base,
 			);
 			mainGroup = 26858F6D2D1AE2A600897E37;
+			packageReferences = (
+				263878942D6F65F000AB5104 /* XCRemoteSwiftPackageReference "swift-google-drive-client" */,
+			);
 			productRefGroup = 26858F772D1AE2A600897E37 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -829,6 +834,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		263878942D6F65F000AB5104 /* XCRemoteSwiftPackageReference "swift-google-drive-client" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/darrarski/swift-google-drive-client.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		263878952D6F65F000AB5104 /* GoogleDriveClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 263878942D6F65F000AB5104 /* XCRemoteSwiftPackageReference "swift-google-drive-client" */;
+			productName = GoogleDriveClient;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 26858F6E2D1AE2A600897E37 /* Project object */;
 }

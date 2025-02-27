@@ -7,8 +7,6 @@
 
 protocol MyMusicBusinessLogic {
     func loadStart(_ request: MyMusicModel.Start.Request)
-    func fetchCloudAudioFiles(_ request: MyMusicModel.FetchedFiles.Request)
-    func fetchLocalAudioFiles(_ request: MyMusicModel.FetchedFiles.Request)
     func sortAudioFiles(_ request: MyMusicModel.Sort.Request)
     func searchAudioFiles(_ request: MyMusicModel.Search.Request)
     func playSelectedTrack(_ request: MyMusicModel.Play.Request)
@@ -16,7 +14,8 @@ protocol MyMusicBusinessLogic {
     func playShuffle()
     func playNextTrack()
     // Delete tracks.
-    func deleteTracks(_ request: MyMusicModel.Delete.Request)
+    func handleDeleteSelectedTracks(_ request: MyMusicModel.HandleDelete.Request)
+    func deleteSelectedTracks(_ request: MyMusicModel.Delete.Request)
     // Update AudioFiles
     func updateAudioFiles(_ request: MyMusicModel.UpdateAudio.Request)
     // Edit mode
@@ -46,6 +45,7 @@ protocol MyMusicPresentationLogic {
     func presentCellData(_ response: MyMusicModel.CellData.Response)
     func presentTrackSelection(_ response: MyMusicModel.TrackSelection.Response)
     func presentNotConnectedMessage()
+    func presentDeleteAlert(_ response: MyMusicModel.DeleteAlert.Response)
     func presentError(_ response: MyMusicModel.Error.Response)
     
     func routeTo()
