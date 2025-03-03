@@ -25,6 +25,8 @@ enum Image: String {
     case icMeatballsMenu = "ic-meatballs-menu"
     case icNextTrack = "ic-next-track"
     case icCheck = "ic-check"
+    case icRepeat = "ic-repeat"
+    case icPrevTrack = "ic-prev-track"
 }
 
 extension UIImage {

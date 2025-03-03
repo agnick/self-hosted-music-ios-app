@@ -7,6 +7,8 @@
 
 import GoogleSignIn
 import GoogleAPIClientForREST
+import AVFoundation
+import GoogleDriveClient
 
 final class GoogleDriveWorker: CloudWorkerProtocol {
     // MARK: - Variables
@@ -119,26 +121,45 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
         
         var audioFiles: [AudioFile] = []
         
-        for file in files {
-            guard
-                let name = file.name,
-                let webContentLink = file.webContentLink,
-                let fileSize = file.size?.doubleValue
-            else {
-                continue
+        try await withThrowingTaskGroup(of: AudioFile?.self) { group in
+            for file in files {
+                group.addTask {
+                    do {
+                        guard
+                            let webContentLink = file.webContentLink,
+                            let url = URL(string: webContentLink)
+                        else {
+                            throw NSError(domain: "Invalid URL", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid web content link"])
+                        }
+                        
+                        let asset = AVURLAsset(url: url)
+                        let duration = try await asset.load(.duration)
+                        let durationInSeconds = CMTimeGetSeconds(duration)
+                        
+                        let fileSize = file.size?.doubleValue ?? 0
+                        let fileName = file.name ?? "Unknown"
+                        
+                        return AudioFile(
+                            name: fileName,
+                            artistName: fileName,
+                            sizeInMB: fileSize / (1024 * 1024),
+                            durationInSeconds: durationInSeconds,
+                            downloadPath: webContentLink,
+                            playbackUrl: webContentLink,
+                            source: .googleDrive
+                        )
+                    } catch {
+                        print("Ошибка при обработке \(file.name ?? "Unknown"): \(error)")
+                        return nil
+                    }
+                }
             }
             
-            let audioFile = AudioFile(
-                name: name,
-                artistName: name,
-                sizeInMB: fileSize / (1024 * 1024),
-                durationInSeconds: 0,
-                downloadPath: webContentLink,
-                playbackUrl: webContentLink,
-                source: .googleDrive
-            )
-            
-            audioFiles.append(audioFile)
+            for try await audioFile in group {
+                if let audioFile = audioFile {
+                    audioFiles.append(audioFile)
+                }
+            }
         }
         
         return audioFiles

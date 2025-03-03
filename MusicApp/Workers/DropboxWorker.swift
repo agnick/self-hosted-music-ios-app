@@ -6,7 +6,7 @@
 //
 
 import SwiftyDropbox
-import UIKit
+import AVFoundation
 
 final class DropboxWorker: CloudWorkerProtocol {
     private var authObserver: NSObjectProtocol?
@@ -113,30 +113,62 @@ final class DropboxWorker: CloudWorkerProtocol {
         do {
             let response = try await client.files.listFolder(path: "").response()
             
-            for entry in response.entries {
+            let supportedExtensions = ["mp3", "m4a", "wav", "aac", "flac"]
+            
+            let audioEntries = response.entries.compactMap { entry -> (Files.FileMetadata, String)? in
                 guard
                     let pathToFile = entry.pathDisplay,
-                    let fileEntry = entry as? Files.FileMetadata
+                    let fileEntry = entry as? Files.FileMetadata,
+                    let fileExtension = pathToFile.split(separator: ".").last?.lowercased(),
+                    supportedExtensions.contains(fileExtension)
                 else {
-                    continue
+                    return nil
                 }
                 
-                let tempLink = try await client.files.getTemporaryLink(path: pathToFile).response()
+                return (fileEntry, pathToFile)
+            }
+            
+            try await withThrowingTaskGroup(of: AudioFile?.self) { group in
+                for (fileEntry, pathToFile) in audioEntries {
+                    group.addTask {
+                        do {
+                            let tempLink = try await client.files.getTemporaryLink(path: pathToFile).response()
+                            
+                            guard
+                                let url = URL(string: tempLink.link)
+                            else {
+                                throw NSError(domain: "Invalid URL", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid temporary link"])
+                            }
+                            
+                            let asset = AVURLAsset(url: url)
+                            let duration = try await asset.load(.duration)
+                            let durationInSeconds = CMTimeGetSeconds(duration)
+                            
+                            return AudioFile(
+                                name: fileEntry.name,
+                                artistName: fileEntry.name,
+                                sizeInMB: Double(fileEntry.size) / (1024 * 1024),
+                                durationInSeconds: durationInSeconds,
+                                downloadPath: pathToFile,
+                                playbackUrl: tempLink.link,
+                                source: .dropbox
+                            )
+                        } catch {
+                            print("Ошибка при обработке \(fileEntry.name): \(error)")
+                            return nil
+                        }
+                    }
+                }
                 
-                let audioFile = AudioFile(
-                    name: fileEntry.name,
-                    artistName: fileEntry.name,
-                    sizeInMB: Double(fileEntry.size) / (1024 * 1024),
-                    durationInSeconds: 0,
-                    downloadPath: pathToFile,
-                    playbackUrl: tempLink.link,
-                    source: .dropbox
-                )
-                
-                audioFiles.append(audioFile)
+                for try await audioFile in group {
+                    if let audioFile = audioFile {
+                        audioFiles.append(audioFile)
+                    }
+                }
             }
         } catch {
             print(error)
+            throw error
         }
         
         return audioFiles

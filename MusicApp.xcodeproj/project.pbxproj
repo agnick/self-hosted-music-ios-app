@@ -29,6 +29,9 @@
 		2601DBA72D2AF0E2002024CC /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2601DB922D2AF0E2002024CC /* SceneDelegate.swift */; };
 		2601DBA82D2AF0E2002024CC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2601DB8E2D2AF0E2002024CC /* Assets.xcassets */; };
 		2601DBAA2D2AF0E2002024CC /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2601DB912D2AF0E2002024CC /* LaunchScreen.storyboard */; };
+		261DD9A62D70B0A10065E406 /* PlayerViewFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261DD9A52D70B0980065E406 /* PlayerViewFactory.swift */; };
+		261DD9A82D70C8840065E406 /* UIImage+Resized.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261DD9A72D70C8780065E406 /* UIImage+Resized.swift */; };
+		261DD9AA2D75E67E0065E406 /* GoogleDriveClient in Frameworks */ = {isa = PBXBuildFile; productRef = 261DD9A92D75E67E0065E406 /* GoogleDriveClient */; };
 		261F542A2D4E5A2300FA94F2 /* AudioPlayerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261F54292D4E5A1A00FA94F2 /* AudioPlayerService.swift */; };
 		261F542C2D4E5FB400FA94F2 /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261F542B2D4E5FAE00FA94F2 /* MiniPlayerView.swift */; };
 		261F542F2D4E6BCD00FA94F2 /* MiniPlayerViewFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261F542E2D4E6BC500FA94F2 /* MiniPlayerViewFactory.swift */; };
@@ -109,6 +112,8 @@
 		2601DB8F2D2AF0E2002024CC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2601DB902D2AF0E2002024CC /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		2601DB922D2AF0E2002024CC /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		261DD9A52D70B0980065E406 /* PlayerViewFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerViewFactory.swift; sourceTree = "<group>"; };
+		261DD9A72D70C8780065E406 /* UIImage+Resized.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIImage+Resized.swift"; sourceTree = "<group>"; };
 		261F54292D4E5A1A00FA94F2 /* AudioPlayerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayerService.swift; sourceTree = "<group>"; };
 		261F542B2D4E5FAE00FA94F2 /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
 		261F542E2D4E6BC500FA94F2 /* MiniPlayerViewFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerViewFactory.swift; sourceTree = "<group>"; };
@@ -174,6 +179,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				261DD9AA2D75E67E0065E406 /* GoogleDriveClient in Frameworks */,
 				0EFCE0DA08E0C9263A71D54D /* Pods_MusicApp.framework in Frameworks */,
 				263878962D6F65F000AB5104 /* GoogleDriveClient in Frameworks */,
 			);
@@ -278,6 +284,7 @@
 		2646EE4B2D2EBCE0002E7FFA /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
+				261DD9A72D70C8780065E406 /* UIImage+Resized.swift */,
 				26C6410E2D36F45000E83901 /* UIViewController+Alert.swift */,
 				2601DB7A2D2AF0E2002024CC /* UIView+Pin.swift */,
 			);
@@ -336,6 +343,7 @@
 		26A5792F2D652F55007FA466 /* Player */ = {
 			isa = PBXGroup;
 			children = (
+				261DD9A52D70B0980065E406 /* PlayerViewFactory.swift */,
 				26A579392D65319A007FA466 /* PlayerAssembly.swift */,
 				26A579372D65318C007FA466 /* PlayerProtocols.swift */,
 				26A579352D65317F007FA466 /* PlayerModels.swift */,
@@ -551,6 +559,7 @@
 				2694C2DC2D34298100DFB9E8 /* SettingsScreenWorker.swift in Sources */,
 				261F542A2D4E5A2300FA94F2 /* AudioPlayerService.swift in Sources */,
 				2694C2D22D34294F00DFB9E8 /* SettingsScreenModels.swift in Sources */,
+				261DD9A62D70B0A10065E406 /* PlayerViewFactory.swift in Sources */,
 				2601DB942D2AF0E2002024CC /* ImportOptionsCell.swift in Sources */,
 				26A5793A2D6531A4007FA466 /* PlayerAssembly.swift in Sources */,
 				2601DB952D2AF0E2002024CC /* TabViewController.swift in Sources */,
@@ -581,6 +590,7 @@
 				26E7E20E2D2D638F003AFA22 /* AudioFilesOverviewScreenProtocols.swift in Sources */,
 				2646EE4A2D2EBCDB002E7FFA /* CloudServiceType.swift in Sources */,
 				26A579452D65EC03007FA466 /* Env.swift in Sources */,
+				261DD9A82D70C8840065E406 /* UIImage+Resized.swift in Sources */,
 				26E7E2102D2D639F003AFA22 /* AudioFilesOverviewScreenInteractor.swift in Sources */,
 				26C446FD2D4A9B990094C5F4 /* MyMusicWorker.swift in Sources */,
 				2654A3E62D3AA84A00CCC58D /* MyMusicViewController.swift in Sources */,
@@ -847,6 +857,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		261DD9A92D75E67E0065E406 /* GoogleDriveClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 263878942D6F65F000AB5104 /* XCRemoteSwiftPackageReference "swift-google-drive-client" */;
+			productName = GoogleDriveClient;
+		};
 		263878952D6F65F000AB5104 /* GoogleDriveClient */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 263878942D6F65F000AB5104 /* XCRemoteSwiftPackageReference "swift-google-drive-client" */;

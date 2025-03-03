@@ -63,7 +63,7 @@ final class MyMusicViewController: UIViewController {
     
     // MARK: - Variables
     // MyMusic screen interactor, it contains all bussiness logic.
-    private var interactor: (MyMusicBusinessLogic & MyMusicDataStore)
+    private let interactor: (MyMusicBusinessLogic & MyMusicDataStore)
     // View factory for MyMusicViewController.
     private let viewFactory: MyMusicViewFactory
         

@@ -10,8 +10,10 @@ import UIKit
 enum PlayerAssembly {
     static func build() -> UIViewController {
         let presenter = PlayerPresenter()
-        let interactor = PlayerInteractor(presenter: presenter)
-        let view = PlayerViewController(interactor: interactor)
+        let audioPlayerService = AudioPlayerService()
+        let interactor = PlayerInteractor(presenter: presenter, audioPlayerService: audioPlayerService)
+        let viewFactory = PlayerViewFactory()
+        let view = PlayerViewController(interactor: interactor, viewFactory: viewFactory)
         presenter.view = view
         
         return view
