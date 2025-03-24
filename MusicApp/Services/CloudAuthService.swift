@@ -45,9 +45,9 @@ final class CloudAuth {
     // MARK: - Variables
     private var authorizedService: CloudServiceType?
     private let workers: [CloudServiceType: CloudWorkerProtocol] = [
-            .googleDrive: GoogleDriveWorker(),
-            .dropbox: DropboxWorker(),
-        ]
+        .googleDrive: GoogleDriveWorker(),
+        .dropbox: DropboxWorker(),
+    ]
     
     // MARK: - Lifecycle
     private init() {}
@@ -63,6 +63,7 @@ final class CloudAuth {
         }
         
         try await worker.authorize(vc: vc)
+
         authorizedService = service
     }
     

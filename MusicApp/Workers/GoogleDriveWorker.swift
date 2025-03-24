@@ -8,7 +8,6 @@
 import GoogleSignIn
 import GoogleAPIClientForREST
 import AVFoundation
-import GoogleDriveClient
 
 final class GoogleDriveWorker: CloudWorkerProtocol {
     // MARK: - Variables
@@ -90,7 +89,7 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
     func fetchAudio() async throws -> [AudioFile] {
         let query = GTLRDriveQuery_FilesList.query()
         query.q = "mimeType contains 'audio/' and trashed = false"
-        query.fields = "files(id, name, webContentLink, size, videoMediaMetadata(durationMillis))"
+        query.fields = "files(id, name, webContentLink, size)"
         
         let result: GTLRDrive_FileList = try await withCheckedThrowingContinuation { continuation in
             driveService.executeQuery(query) { _, result, error in
@@ -123,7 +122,13 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
         
         try await withThrowingTaskGroup(of: AudioFile?.self) { group in
             for file in files {
-                group.addTask {
+                group.addTask { [weak self] in
+                    guard
+                        let self = self
+                    else {
+                        throw NSError(domain: "Retain cycle", code: 0)
+                    }
+                    
                     do {
                         guard
                             let webContentLink = file.webContentLink,
@@ -132,7 +137,11 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
                             throw NSError(domain: "Invalid URL", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid web content link"])
                         }
                         
-                        let asset = AVURLAsset(url: url)
+                        let token = try await self.getAccessToken()
+                        let headers = ["Authorization": "Bearer \(token)"]
+                        let options = ["AVURLAssetHTTPHeaderFieldsKey": headers]
+                        
+                        let asset = AVURLAsset(url: url, options: options)
                         let duration = try await asset.load(.duration)
                         let durationInSeconds = CMTimeGetSeconds(duration)
                         
@@ -169,7 +178,7 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
         guard var request = await getDownloadRequest(from: urlString) else {
             throw NSError(domain: "Invalid download URL", code: 400, userInfo: nil)
         }
-        
+
         request.httpMethod = "GET"
                 
         do {

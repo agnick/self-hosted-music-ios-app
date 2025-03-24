@@ -27,6 +27,10 @@ enum Image: String {
     case icCheck = "ic-check"
     case icRepeat = "ic-repeat"
     case icPrevTrack = "ic-prev-track"
+    case icCreateNewPlaylist = "ic-create-new-playlist"
+    case icPickImage = "ic-pick-image"
+    case icAddIntoPlaylist = "ic-add-into-playlist"
+    case icDeleteFromPlaylist = "ic-delete-from-playlist"
 }
 
 extension UIImage {

@@ -1,29 +1,20 @@
 //
-//  FetchedAudioCell.swift
+//  PlaylistEditAudioCell.swift
 //  MusicApp
 //
-//  Created by Никита Агафонов on 19.01.2025.
+//  Created by Никита Агафонов on 08.03.2025.
 //
 
 import UIKit
 
-protocol FetchedAudioCellDelegate: AnyObject {
-    func didTapCheckBox(in cell: FetchedAudioCell)
-}
-
-final class FetchedAudioCell: UITableViewCell {
+final class PlaylistEditAudioCell: UITableViewCell {
     // MARK: - Enums
     enum Constants {
         // Wrap settings.
         static let wrapLayerCornerRadius: CGFloat = 10
         static let wrapOffsetV: CGFloat = 5
-        static let wrapOffsetH: CGFloat = 0
-        static let wrapEditingLeading: CGFloat = 5
-        
-        // checkBox settings.
-        static let checkBoxLeft: CGFloat = 10
-        static let checkBoxWidth: CGFloat = 30
-        static let checkBoxHeight: CGFloat = 30
+        static let wrapLeading: CGFloat = 10
+        static let wrapTrailing: CGFloat = 0
         
         // audioImg settings.
         static let audioImgLeading: CGFloat = 15
@@ -47,31 +38,23 @@ final class FetchedAudioCell: UITableViewCell {
         static let audioDurationRight: CGFloat = 20
         static let audioDurationWidth: CGFloat = 30
         
-        // downloadButton settings
-        static let meatballsMenuHeight: CGFloat = 30
-        static let meatballsMenuWidth: CGFloat = 30
-        static let meatballsMenuTrailing: CGFloat = 15
+        // deleteButton settings.
+        static let deleteButtonSize: CGFloat = 28
     }
     
     // MARK: - Variables
-    static let reuseId: String = "AudioFilesCell"
-    
-    // Closures.
-    var downloadAction: (() -> Void)?
+    static let reuseId: String = "PlaylistEditAudioCell"
     
     // UI Components.
     private let audioImg: UIImageView = UIImageView()
-    private let checkBox: UIButton = UIButton(type: .system)
     private let audioNameLabel: UILabel = UILabel()
     private let artistNameLabel: UILabel = UILabel()
     private let audioDuration: UILabel = UILabel()
-    private let meatballsMenu: UIButton = UIButton(type: .system)
+    private let deleteButton: UIButton = UIButton(type: .system)
     private let wrap: UIView = UIView()
     
-    private var wrapLeftConstraint: NSLayoutConstraint!
-    private var isPicked: Bool = false
-    
-    weak var delegate: FetchedAudioCellDelegate?
+    // Delete action
+    var deleteAction: (() -> Void)?
     
     // MARK: - Lifecycle
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -86,47 +69,17 @@ final class FetchedAudioCell: UITableViewCell {
     }
     
     // MARK: - Actions
-    @objc private func downloadButtonTapped() {
-        downloadAction?()
-    }
-    
-    @objc private func meatballsMenuTapped() {
-        
-    }
-    
-    @objc private func checkBoxTapped() {
-        isPicked.toggle()
-        let newImage = isPicked ? UIImage(systemName: "checkmark.circle.fill") : UIImage(systemName: "circle")
-        checkBox.setImage(newImage, for: .normal)
-
-        delegate?.didTapCheckBox(in: self)
+    @objc private func deleteButtonTapped() {
+        deleteAction?()
     }
     
     // MARK: - Public Methods
-    func configure(isEditingMode: Bool, img: UIImage = UIImage(image: .icAudioImg), audioName: String, artistName: String, duration: Double?) {
+    func configure(img: UIImage = UIImage(image: .icAudioImg), audioName: String, artistName: String, duration: Double?) {
         audioImg.image = img
         audioNameLabel.text = audioName
         artistNameLabel.text = artistName
         
         audioDuration.text = formatDuration(duration) ?? ""
-        
-        checkBox.isHidden = !isEditingMode
-        
-        if isEditingMode {
-            wrapLeftConstraint.constant = checkBox.frame.maxX + Constants.wrapEditingLeading
-            meatballsMenu.isHidden = true
-        } else {
-            wrapLeftConstraint.constant = Constants.wrapOffsetH
-            meatballsMenu.isHidden = false
-        }
-        
-        layoutIfNeeded()
-    }
-    
-    func updateCheckBoxState(isPicked: Bool) {
-        self.isPicked = isPicked
-        let newImage = isPicked ? UIImage(systemName: "checkmark.circle.fill") : UIImage(systemName: "circle")
-        checkBox.setImage(newImage, for: .normal)
     }
     
     // MARK: - Private Methods
@@ -135,28 +88,26 @@ final class FetchedAudioCell: UITableViewCell {
         contentView.backgroundColor = .clear
         backgroundColor = .clear
         
-        configureCheckBox()
+        configureDeleteButton()
         configureWrap()
         configureImportOptionImg()
-        configureMeatballsMenu()
         configureAudioDuration()
         configureImportOptionTitle()
         configureArtistNameLabel()
     }
     
-    private func configureCheckBox() {
-        addSubview(checkBox)
-
-        checkBox.setImage(UIImage(systemName: "circle"), for: .normal)
-        checkBox.tintColor = UIColor(color: .primary)
-        checkBox.isHidden = true
+    private func configureDeleteButton() {
+        addSubview(deleteButton)
         
-        checkBox.addTarget(self, action: #selector(checkBoxTapped), for: .touchUpInside)
+        deleteButton.setImage(UIImage(image: .icDeleteFromPlaylist), for: .normal)
+        deleteButton.tintColor = .black
         
-        checkBox.pinLeft(to: self)
-        checkBox.pinCenterY(to: self)
-        checkBox.setWidth(Constants.checkBoxWidth)
-        checkBox.setHeight(Constants.checkBoxHeight)
+        deleteButton.addTarget(self, action: #selector(deleteButtonTapped), for: .touchUpInside)
+        
+        deleteButton.pinLeft(to: self)
+        deleteButton.pinCenterY(to: self)
+        deleteButton.setWidth(Constants.deleteButtonSize)
+        deleteButton.setHeight(Constants.deleteButtonSize)
     }
     
     private func configureWrap() {
@@ -169,9 +120,8 @@ final class FetchedAudioCell: UITableViewCell {
         
         // Wrap constraints.
         wrap.pinVertical(to: self, Constants.wrapOffsetV)
-        wrap.pinRight(to: self, Constants.wrapOffsetH)
-        
-        wrapLeftConstraint = wrap.pinLeft(to: self, Constants.wrapOffsetH)
+        wrap.pinLeft(to: deleteButton.trailingAnchor, Constants.wrapLeading)
+        wrap.pinRight(to: self, Constants.wrapTrailing)
     }
     
     private func configureImportOptionImg() {
@@ -227,24 +177,8 @@ final class FetchedAudioCell: UITableViewCell {
         
         // Title constraints.
         audioDuration.pinCenterY(to: wrap)
-        audioDuration.pinRight(to: meatballsMenu.leadingAnchor, Constants.audioDurationRight)
+        audioDuration.pinRight(to: wrap, Constants.audioDurationRight)
         audioDuration.setWidth(Constants.audioDurationWidth)
-    }
-    
-    private func configureMeatballsMenu() {
-        wrap.addSubview(meatballsMenu)
-        
-        meatballsMenu.setImage(UIImage(image: .icMeatballsMenu), for: .normal)
-        
-        meatballsMenu.contentMode = .scaleAspectFit
-        meatballsMenu.clipsToBounds = true
-        
-        meatballsMenu.setHeight(Constants.meatballsMenuHeight)
-        meatballsMenu.setWidth(Constants.meatballsMenuWidth)
-        meatballsMenu.pinRight(to: wrap, Constants.meatballsMenuTrailing)
-        meatballsMenu.pinCenterY(to: wrap)
-        
-        meatballsMenu.addTarget(self, action: #selector(meatballsMenuTapped), for: .touchUpInside)
     }
     
     private func formatDuration(_ duration: Double?) -> String? {

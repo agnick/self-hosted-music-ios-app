@@ -35,7 +35,7 @@ final class TabViewController: UITabBarController {
         let playlistsScreen = createNav(
             with: "Плейлисты",
             and: UIImage(image: .icPlaylists),
-            vc: AudioImportAssembly.build()
+            vc: PlaylistsAssembly.build()
         )
         let settingsScreen = createNav(
             with: "Дополнительно",

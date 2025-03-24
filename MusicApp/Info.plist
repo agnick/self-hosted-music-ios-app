@@ -41,17 +41,6 @@
                 <string>db-two3roiokxbw49y</string>
             </array>
         </dict>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>CFBundleURLName</key>
-            <string>yandex_auth</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>yx5297bdd1ed55465097544d58fb680e78</string>
-                <string>yx6f335125c3f94053886fc5aa01177a41</string>
-            </array>
-        </dict>
     </array>
     <key>LSApplicationQueriesSchemes</key>
     <array>

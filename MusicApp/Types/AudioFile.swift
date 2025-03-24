@@ -24,3 +24,9 @@ enum AudioSource: String {
     case googleDrive = "google_drive"
     case dropbox = "dropbox"
 }
+
+extension AudioFile: Equatable {
+    static func == (lhs: AudioFile, rhs: AudioFile) -> Bool {
+        return lhs.playbackUrl == rhs.playbackUrl
+    }
+}

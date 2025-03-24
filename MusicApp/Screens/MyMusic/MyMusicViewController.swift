@@ -76,9 +76,11 @@ final class MyMusicViewController: UIViewController {
     private var playButton: UIButton?
     private var shuffleButton: UIButton?
     private var pickAllButton: UIButton?
+    
     // Labels.
     private let titleLabel: UILabel = UILabel()
     private let notConnectedLabel: UILabel = UILabel()
+    
     // Other components.
     private let segmentedControl: UISegmentedControl = UISegmentedControl()
     private let searchBar: UISearchBar = UISearchBar(frame: .zero)
@@ -260,7 +262,7 @@ final class MyMusicViewController: UIViewController {
     func displayCellData(_ viewModel: MyMusicModel.CellData.ViewModel) {
         guard let cell = audioTable.cellForRow(at: IndexPath(row: viewModel.index, section: 0)) as? FetchedAudioCell else { return }
         
-        cell.configure(isEditingMode: viewModel.isEditingMode, isSelected: viewModel.isSelected, audioName: viewModel.name, artistName: viewModel.artistName, duration: viewModel.durationInSeconds)
+        cell.configure(isEditingMode: viewModel.isEditingMode, audioName: viewModel.name, artistName: viewModel.artistName, duration: viewModel.durationInSeconds)
     }
     
     func displayTrackSelection(_ viewModel: MyMusicModel.TrackSelection.ViewModel) {
