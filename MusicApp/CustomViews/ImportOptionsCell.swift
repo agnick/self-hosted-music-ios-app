@@ -1,10 +1,3 @@
-//
-//  ImportOptionsCell.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 03.01.2025.
-//
-
 import UIKit
 
 final class ImportOptionsCell: UITableViewCell {

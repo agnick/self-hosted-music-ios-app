@@ -1,18 +1,9 @@
-//
-//  StartScreenAssembly.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 24.12.2024.
-//
-
 import UIKit
 
 enum StartScreenAssembly {
-    static func build() -> UIViewController {
+    static func build(container: AppDIContainer) -> UIViewController {
         let presenter = StartScreenPresenter()
-        let worker = StartScreenWorker()
-        let cloudAuthService = CloudAuthService()
-        let interactor = StartScreenInteractor(presenter: presenter, worker: worker, cloudAuthService: cloudAuthService)
+        let interactor = StartScreenInteractor(presenter: presenter, container: container)
         let view = StartScreenViewController(interactor: interactor)
         presenter.view = view
         

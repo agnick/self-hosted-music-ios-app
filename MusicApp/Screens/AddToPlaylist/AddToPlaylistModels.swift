@@ -1,12 +1,7 @@
-//
-//  AddToPlaylistModels.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 06.03.2025.
-//
+import Foundation
 
 enum AddToPlaylistModel {
-    enum LocalAudioFiles {
+    enum AudioFiles {
         struct Response {
             let audioFiles: [AudioFile]
             let selectedAudioFiles: Set<String>
@@ -26,16 +21,17 @@ enum AddToPlaylistModel {
     
     enum TrackSelection {
         struct Request {
-            let index: Int
+            let audioFile: AudioFile
+            let indexPath: IndexPath
         }
         
         struct Response {
-            let index: Int
+            let indexPath: IndexPath
             let selectedAudioFiles: Set<String>
         }
         
         struct ViewModel {
-            let index: Int
+            let indexPath: IndexPath
             let isSelected: Bool
             let selectedAudioFilesCount: String
         }

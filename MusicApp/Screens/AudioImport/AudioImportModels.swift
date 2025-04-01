@@ -1,64 +1,30 @@
-//
-//  AudioImportModels.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 28.12.2024.
-//
-
 import UIKit
 
 enum AudioImportModel {
-    enum Error {
-        struct Request {}
-        
-        struct Response {
-            let error: Swift.Error
-        }
-        
-        struct ViewModel {
-            let errorDescription: String
-        }
-    }
-    
     enum CloudServiceSelection {
         struct Request {
-            let service: CloudServiceType
+            let service: RemoteAudioSource
             let vc: UIViewController
-        }
-        
-        struct Response {
-        }
-        
-        struct ViewModel {
         }
     }
     
     enum NewAuth {
         struct Request {
-            let currentService: CloudServiceType
-            let newService: CloudServiceType
+            let currentService: RemoteAudioSource
+            let newService: RemoteAudioSource
             let vc: UIViewController
-        }
-        
-        struct Response {
-        }
-        
-        struct ViewModel {
         }
     }
     
     enum AuthAlert {
-        struct Request {
-        }
-        
         struct Response {
-            let currentService: CloudServiceType
-            let newService: CloudServiceType
+            let currentService: RemoteAudioSource
+            let newService: RemoteAudioSource
         }
         
         struct ViewModel {
-            let currentService: CloudServiceType
-            let newService: CloudServiceType
+            let currentService: RemoteAudioSource
+            let newService: RemoteAudioSource
         }
     }
     
@@ -66,11 +32,23 @@ enum AudioImportModel {
         struct Request {
             let urls: [URL]
         }
-        
+    }
+    
+    enum Route {
         struct Response {
+            let cloudDataService: CloudDataService
+            let coreDataManager: CoreDataManager
+            let service: RemoteAudioSource
+        }
+    }
+    
+    enum Error {
+        struct Response {
+            let error: Swift.Error
         }
         
         struct ViewModel {
+            let errorDescription: String
         }
     }
 }

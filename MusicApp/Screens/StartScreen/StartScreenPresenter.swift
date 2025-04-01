@@ -1,31 +1,21 @@
-//
-//  StartScreenPresenter.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 24.12.2024.
-//
-
 import UIKit
 
 final class StartScreenPresenter: StartScreenPresentationLogic {
-    // MARK: - Variables
+    // MARK: - Dependencies
     weak var view: StartScreenViewController?
     
-    // MARK: - Routing methods
-    func routeToMainImportScreen() {
+    // MARK: - Public methods
+    func presentMainScreen(_ response: StartScreenModel.MainScreen.Response) {
         // Replaces the rootViewController to prevent returning to the start screen.
         // Ensures proper navigation flow on subsequent screens.
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first else {
+        guard
+            let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first
+        else {
             return
         }
         
-        window.rootViewController = TabViewController()
+        window.rootViewController = TabViewController(container: response.container)
         window.makeKeyAndVisible()
-    }
-    
-    func routeToSliderGuideScreen() {
-        view?.navigationController?
-            .pushViewController(UIViewController(), animated: true)
     }
 }

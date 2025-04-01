@@ -1,29 +1,25 @@
-//
-//  SceneDelegate.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 24.12.2024.
-//
-
 import UIKit
 import SwiftyDropbox
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
-    private let cloudAuthService = CloudAuthService()
+    // DI start point.
+    private let container = AppDIContainer()
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        // Checking authorization for all services
         Task.detached { [weak self] in
             await self?.reathorizeAllServices()
         }
         
-        guard let windowScene = (scene as? UIWindowScene) else { return }
+        guard
+            let windowScene = (scene as? UIWindowScene)
+        else {
+            return
+        }
+        
         let window = UIWindow(windowScene: windowScene)
-        window.rootViewController = UINavigationController(rootViewController: StartScreenAssembly.build())
+        window.overrideUserInterfaceStyle = .light
+        window.rootViewController = UINavigationController(rootViewController: StartScreenAssembly.build(container: container))
         self.window = window
         window.makeKeyAndVisible()
     }
@@ -81,10 +77,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     // MARK: - Private methods
     private func reathorizeAllServices() async {
-        for service in CloudServiceType.allCases {
+        let cloudAuthService = container.cloudAuthService
+        
+        for service in RemoteAudioSource.allCases {
             do {
                 print("Reauthorizing \(service)...")
-                try await cloudAuthService.reauthorize(for: service)
+                try await cloudAuthService.reauthorize(service)
                 print("\(service) reauthorized successfully.")
             } catch {
                 print(

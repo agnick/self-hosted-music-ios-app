@@ -1,45 +1,27 @@
-//
-//  StartScreenInteractor.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 24.12.2024.
-//
-
 import Foundation
 
 final class StartScreenInteractor: StartScreenBusinessLogic {
-    // MARK: - Variables
+    // MARK: - Dependencies
     private let presenter: StartScreenPresentationLogic
-    private let worker: StartScreenWorkerLogic
-    private let cloudAuthService: CloudAuthService
+    private let container: AppDIContainer
     
     // MARK: - Lifecycle
-    init (presenter: StartScreenPresentationLogic, worker: StartScreenWorkerLogic, cloudAuthService: CloudAuthService) {
+    init (presenter: StartScreenPresentationLogic, container: AppDIContainer) {
         self.presenter = presenter
-        self.worker = worker
-        self.cloudAuthService = cloudAuthService
+        self.container = container
     }
     
     // MARK: - Navigation determination
-    func determineNavigationDestination() {
+    func loadMainScreen() {
         // Perform an asynchronous delay so as not to block the main thread and allow the UI to load.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-            guard let self = self else { return }
-            
-            let isFirstLaunch = worker.isFirstLaunch()
-            
-            if isFirstLaunch {
-                print("Launching slider guide...")
-                worker.markOnboardingCompleted()
-                
-                // Routing to slider guide screen.
-                presenter.routeToSliderGuideScreen()
-            } else {
-                print("Launching main screen...")
-                
-                // Routing to main import screen.
-                presenter.routeToMainImportScreen() // Main screen
+            guard
+                let self = self
+            else {
+                return
             }
+            
+            self.presenter.presentMainScreen(StartScreenModel.MainScreen.Response(container: container))
         }
     }
 }

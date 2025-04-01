@@ -1,10 +1,3 @@
-//
-//  AddToPlaylistFactory.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 06.03.2025.
-//
-
 import UIKit
 
 final class AddToPlaylistViewFactory {

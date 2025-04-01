@@ -1,10 +1,3 @@
-//
-//  PlaylistEditAudioCell.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 08.03.2025.
-//
-
 import UIKit
 
 final class PlaylistEditAudioCell: UITableViewCell {
@@ -18,14 +11,21 @@ final class PlaylistEditAudioCell: UITableViewCell {
         
         // audioImg settings.
         static let audioImgLeading: CGFloat = 15
-        static let audioImgHeight: CGFloat = 50
-        static let audioImgWidth: CGFloat = 50
+        static let audioImgHeight: CGFloat = 60
+        static let audioImgWidth: CGFloat = 60
+        static let audioImgCornerRadius: CGFloat = 10
         
         // audioNameLabel settings.
         static let audioNameLabelFontSize: CGFloat = 16
         static let audioNameLabelLeading: CGFloat = 16
         static let audioNameLabelTrailing: CGFloat = 20
         static let audioNameLabelNumberOfLines: Int = 1
+        
+        // audioSourceLabel settings.
+        static let audioSourceLabelFontSize: CGFloat = 10
+        static let audioSourceLabelLeading: CGFloat = 16
+        static let audioSourceLabelTrailing: CGFloat = 20
+        static let audioSourceLabelNumberOfLines: Int = 1
         
         // artistNameLabel settings.
         static let artistNameLabelFontSize: CGFloat = 10
@@ -49,6 +49,7 @@ final class PlaylistEditAudioCell: UITableViewCell {
     private let audioImg: UIImageView = UIImageView()
     private let audioNameLabel: UILabel = UILabel()
     private let artistNameLabel: UILabel = UILabel()
+    private let audioSourceLabel: UILabel = UILabel()
     private let audioDuration: UILabel = UILabel()
     private let deleteButton: UIButton = UIButton(type: .system)
     private let wrap: UIView = UIView()
@@ -74,10 +75,11 @@ final class PlaylistEditAudioCell: UITableViewCell {
     }
     
     // MARK: - Public Methods
-    func configure(img: UIImage = UIImage(image: .icAudioImg), audioName: String, artistName: String, duration: Double?) {
+    func configure(img: UIImage, audioName: String, artistName: String, duration: Double?, source: RemoteAudioSource?) {
         audioImg.image = img
         audioNameLabel.text = audioName
         artistNameLabel.text = artistName
+        audioSourceLabel.text = "Источник: \(source?.rawValue ?? "скаченные")"
         
         audioDuration.text = formatDuration(duration) ?? ""
     }
@@ -93,6 +95,7 @@ final class PlaylistEditAudioCell: UITableViewCell {
         configureImportOptionImg()
         configureAudioDuration()
         configureImportOptionTitle()
+        configureAudioSourceLabel()
         configureArtistNameLabel()
     }
     
@@ -130,6 +133,7 @@ final class PlaylistEditAudioCell: UITableViewCell {
         // Image settings.
         audioImg.contentMode = .scaleAspectFill
         audioImg.clipsToBounds = true
+        audioImg.layer.cornerRadius = Constants.audioImgCornerRadius
         
         // Image constraints.
         audioImg.pinLeft(to: wrap, Constants.audioImgLeading)
@@ -151,6 +155,19 @@ final class PlaylistEditAudioCell: UITableViewCell {
         audioNameLabel.pinLeft(to: audioImg.trailingAnchor, Constants.audioNameLabelLeading)
         audioNameLabel.pinRight(to: audioDuration.leadingAnchor, Constants.audioNameLabelTrailing)
         audioNameLabel.pinTop(to: audioImg.topAnchor)
+    }
+    
+    private func configureAudioSourceLabel() {
+        wrap.addSubview(audioSourceLabel)
+        
+        audioSourceLabel.font = .systemFont(ofSize: Constants.audioSourceLabelFontSize, weight: .medium)
+        audioSourceLabel.textColor = UIColor(color: .primary)
+        audioSourceLabel.numberOfLines = Constants.audioSourceLabelNumberOfLines
+        audioNameLabel.lineBreakMode = .byTruncatingTail
+        
+        audioSourceLabel.pinLeft(to: audioImg.trailingAnchor, Constants.audioSourceLabelLeading)
+        audioSourceLabel.pinRight(to: audioDuration.leadingAnchor, Constants.audioSourceLabelTrailing)
+        audioSourceLabel.pinCenterY(to: audioImg.centerYAnchor)
     }
     
     private func configureArtistNameLabel() {

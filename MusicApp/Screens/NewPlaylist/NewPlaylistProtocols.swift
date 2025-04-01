@@ -1,10 +1,3 @@
-//
-//  NewPlaylistProtocols.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 04.03.2025.
-//
-
 import UIKit
 
 protocol NewPlaylistBusinessLogic {
@@ -13,7 +6,7 @@ protocol NewPlaylistBusinessLogic {
     func removeTrack(_ request: NewPlaylistModel.RemoveTrack.Request)
     func loadPickedPlaylistImage(_ request: NewPlaylistModel.PlaylistImage.Request)
     func loadPlaylistName(_ request: NewPlaylistModel.PlaylistName.Request)
-    
+    func loadHardSetImage(_ request: NewPlaylistModel.HardSetImage.Request)
     func savePlaylist()
     func loadTrackPicker()
     func loadImagePicker()
@@ -27,15 +20,14 @@ protocol NewPlaylistPresentationLogic {
     func presentCellData(_ response: NewPlaylistModel.CellData.Response)
     func presentPickedPlaylistImage(_ response: NewPlaylistModel.PlaylistImage.Response)
     func presentError(_ response: NewPlaylistModel.Error.Response)
-    
     func presentSelectedTracks()
     func presentImagePicker()
     func getAddToPlaylistDelegate() -> AddToPlaylistDelegate?
-    
+    func presentPlaylistSavedSuccessfully()
     
     func routeTo(vc: UIViewController)
 }
 
 protocol NewPlaylistWorkerProtocol {
-    func savePlaylistToCoreData(playlist: Playlist)
+    func savePlaylistToCoreData(mode: PlaylistEditingMode, playlist: Playlist) throws
 }

@@ -1,10 +1,3 @@
-//
-//  PlaylistsViewController.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 04.03.2025.
-//
-
 import UIKit
 
 final class PlaylistsViewController: UIViewController {
@@ -22,10 +15,15 @@ final class PlaylistsViewController: UIViewController {
         static let searchBarTextFieldMargin: CGFloat = 0
         
         // createNewPlaylistButton settings
-        static let createNewPlaylistButtonPadding: CGFloat = 5
         static let createNewPlaylistButtonFontSize: CGFloat = 16
         static let createNewPlaylistButtonTop: CGFloat = 10
         static let createNewPlaylistButtonOffset: CGFloat = 20
+        static let createNewPlaylistButtonImageSize: CGFloat = 60
+        static let createNewPlaylistButtonContentSpacing: CGFloat = 15
+        static let createNewPlaylistButtonContentOffset: CGFloat = 10
+        static let createNewPlaylistButtonContentLeading: CGFloat = 15
+        static let createNewPlaylistButtonCornerRadius: CGFloat = 10
+        
         
         // playlistsTable settings.
         static let playlistsTableTop: CGFloat = 10
@@ -36,7 +34,6 @@ final class PlaylistsViewController: UIViewController {
     }
     
     // MARK: - Variables
-    // Playlists screen interactor, it contains all bussiness logic.
     private let interactor: (PlaylistsBusinessLogic & PlaylistsDataStore)
     
     /* UI components */
@@ -47,7 +44,6 @@ final class PlaylistsViewController: UIViewController {
     private var sortButton: UIBarButtonItem?
     private var editButton: UIBarButtonItem?
     private var deleteButton: UIBarButtonItem?
-    private var addButton: UIBarButtonItem?
     private let createNewPlaylistButton: UIButton = UIButton(type: .system)
     
     // Other components.
@@ -83,12 +79,30 @@ final class PlaylistsViewController: UIViewController {
     }
 
     @objc private func editButtonTapped() {
-        
+        interactor.loadEdit()
     }
     
     // MARK: - New playlist creation actions
     @objc private func createNewPlaylistButtonTapped() {
         interactor.createPlaylist()
+    }
+    
+    // MARK: - Playlists edit actions
+    @objc private func deleteSelectedPlaylists() {
+        let actions = [
+            UIAlertAction(title: "Отмена", style: .default),
+            UIAlertAction(title: "Удалить", style: .default) { [weak self] _ in
+                guard
+                    let self = self
+                else {
+                    return
+                }
+                
+                self.interactor.deleteSelectedPlaylists()
+            }
+        ]
+        
+        presentAlert(title: "Вы уверены, что хотите удалить выбранные плейлисты?", message: "Это действие нельзя отменить", actions: actions)
     }
     
     // MARK: - Public methods
@@ -115,6 +129,27 @@ final class PlaylistsViewController: UIViewController {
         }
         
         present(alert, animated: true)
+    }
+    
+    func displayTrackSelection(_ viewModel: PlaylistsModel.TrackSelection.ViewModel) {
+        let indexPath = IndexPath(row: viewModel.index, section: 0)
+        playlistsTable.reloadRows(at: [indexPath], with: .automatic)
+        
+        deleteButton?.isEnabled = viewModel.isSelected
+    }
+    
+    func displayEdit(_ viewModel: PlaylistsModel.Edit.ViewModel) {
+        // Reload the table to reflect changes in UI.
+        playlistsTable.reloadData()
+        
+        // Update UI elements based on the editing mode state.
+        updateEditingModeUI(viewModel.isEditingMode)
+    }
+    
+    func displayError(_ viewModel: PlaylistsModel.Error.ViewModel) {
+        let actions = [UIAlertAction(title: "OK", style: .default)]
+        
+        self.presentAlert(title: "Ошибка", message: viewModel.errorDescription, actions: actions)
     }
     
     // MARK: - Private methods for UI configuring
@@ -184,34 +219,37 @@ final class PlaylistsViewController: UIViewController {
     private func configureCreateNewPlaylistButton() {
         view.addSubview(createNewPlaylistButton)
         
-        var configuration = UIButton.Configuration.filled()
-        configuration.image = UIImage(image: .icCreateNewPlaylist)
-        configuration.baseBackgroundColor = UIColor(color: .buttonColor)
-        configuration.baseForegroundColor = UIColor(color: .primary)
-        configuration.cornerStyle = .medium
-        configuration.imagePadding = Constants.createNewPlaylistButtonPadding
-        configuration.imagePlacement = .leading
+        let imageView = UIImageView(image: UIImage(image: .icCreateNewPlaylist))
+        imageView.contentMode = .scaleAspectFit
+        imageView.setWidth(Constants.createNewPlaylistButtonImageSize)
+        imageView.setHeight(Constants.createNewPlaylistButtonImageSize)
         
-        let title = "Создать новый плейлист"
-        var attributedTitle = AttributedString(title)
-        attributedTitle.font =
-            .systemFont(
-                ofSize: Constants.createNewPlaylistButtonFontSize,
-                weight: .semibold
-            )
-        attributedTitle.foregroundColor = UIColor(
-            color: .primary
-        )
-        configuration.attributedTitle = attributedTitle
-            
-        createNewPlaylistButton.configuration = configuration
+        let label = UILabel()
+        label.text = "Создать новый плейлист"
+        label.font = .systemFont(ofSize: Constants.createNewPlaylistButtonFontSize, weight: .semibold)
+        label.textColor = UIColor(color: .primary)
+        
+        let stack = UIStackView(arrangedSubviews: [imageView, label])
+        stack.axis = .horizontal
+        stack.isUserInteractionEnabled = false
+        stack.spacing = Constants.createNewPlaylistButtonContentSpacing
+        stack.alignment = .center
+        
+        createNewPlaylistButton.addSubview(stack)
+        
+        createNewPlaylistButton.backgroundColor = UIColor(color: .buttonColor)
+        createNewPlaylistButton.layer.cornerRadius = Constants.createNewPlaylistButtonCornerRadius
+        createNewPlaylistButton.clipsToBounds = true
+        
+        stack.pinVertical(to: createNewPlaylistButton, Constants.createNewPlaylistButtonContentOffset)
+        stack.pinLeft(to: createNewPlaylistButton.leadingAnchor, Constants.createNewPlaylistButtonContentLeading)
         
         createNewPlaylistButton.addTarget(self, action: #selector(createNewPlaylistButtonTapped), for: .touchUpInside)
-        
+
         createNewPlaylistButton.pinTop(to: searchBar.bottomAnchor, Constants.createNewPlaylistButtonTop)
         createNewPlaylistButton.pinHorizontal(to: view, Constants.createNewPlaylistButtonOffset)
     }
-    
+
     private func configurePlaylistsTable() {
         view.addSubview(playlistsTable)
         
@@ -254,6 +292,25 @@ final class PlaylistsViewController: UIViewController {
                 Constants.playlistsTableBottom
             )
     }
+    
+    // MARK: - Private methods to update UI on edit
+    private func updateEditingModeUI(_ isEditing: Bool) {
+        if isEditing {
+            deleteButton = UIBarButtonItem(title: "Удалить", style: .plain, target: self, action: #selector(deleteSelectedPlaylists))
+            
+            navigationItem.leftBarButtonItems = [deleteButton].compactMap { $0 }
+            
+            deleteButton?.isEnabled = !isEditing
+            
+            navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Готово", style: .plain, target: self, action: #selector(editButtonTapped))
+        } else {
+            navigationItem.leftBarButtonItems = nil
+            navigationItem.leftBarButtonItem = sortButton
+            navigationItem.rightBarButtonItem = editButton
+            
+            deleteButton = nil
+        }
+    }
 }
 
 // MARK: - UISearchBarDelegate
@@ -282,8 +339,17 @@ extension PlaylistsViewController: UITableViewDataSource {
         ) as! PlaylistCell
         cell.delegate = self
         
+        guard
+            indexPath.row < interactor.playlists.count
+        else {
+            return cell
+        }
+        
+        let playlistId = interactor.playlists[indexPath.row].id
+        let isSelected = interactor.selectedPlaylistIDs.contains(playlistId)
+        
         let playlist = interactor.playlists[indexPath.row]
-        cell.configure(playlist.image, playlist.title)
+        cell.configure(playlist.image, playlist.title, isEditingMode: interactor.isEditingModeEnabled, isSelected: isSelected)
         
         return cell
     }
@@ -295,7 +361,7 @@ extension PlaylistsViewController: UITableViewDelegate {
         _ tableView: UITableView,
         didSelectRowAt indexPath: IndexPath
     ) {
-        
+        interactor.loadPlaylistScreen(PlaylistsModel.LoadPlaylist.Request(index: indexPath.row))
     }
     
     func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
@@ -310,6 +376,8 @@ extension PlaylistsViewController: UITableViewDelegate {
 // MARK: - FetchedAudioCellDelegate
 extension PlaylistsViewController: PlaylistCellDelegate {
     func didTapCheckBox(in cell: PlaylistCell) {
+        guard let indexPath = playlistsTable.indexPath(for: cell) else { return }
         
+        interactor.togglePlaylistsSelection(PlaylistsModel.TrackSelection.Request(index: indexPath.row))
     }
 }

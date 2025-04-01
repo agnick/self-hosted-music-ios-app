@@ -1,18 +1,13 @@
-//
-//  AddToPlaylistPresenter.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 06.03.2025.
-//
-
 import UIKit
 
 final class AddToPlaylistPresenter: AddToPlaylistPresentationLogic {
+    // MARK: - Dependencies
     weak var view: AddToPlaylistViewController?
     
-    func presentLocalAudioFiles(_ request: AddToPlaylistModel.LocalAudioFiles.Response) {
+    // MARK: - Public methods
+    func presentAudioFiles(_ request: AddToPlaylistModel.AudioFiles.Response) {
         DispatchQueue.main.async {
-            self.view?.displayLocalAudioFiles(AddToPlaylistModel.LocalAudioFiles.ViewModel(filesCount: String(request.audioFiles.count), selectedFilesCount: String(request.selectedAudioFiles.count)))
+            self.view?.displayAudioFiles(AddToPlaylistModel.AudioFiles.ViewModel(filesCount: String(request.audioFiles.count), selectedFilesCount: String(request.selectedAudioFiles.count)))
         }
     }
     
@@ -24,7 +19,7 @@ final class AddToPlaylistPresenter: AddToPlaylistPresentationLogic {
     
     func presentTrackSelection(_ response: AddToPlaylistModel.TrackSelection.Response) {
         DispatchQueue.main.async {
-            self.view?.displayTrackSelection(AddToPlaylistModel.TrackSelection.ViewModel(index: response.index, isSelected: response.selectedAudioFiles.count > 0, selectedAudioFilesCount: String(response.selectedAudioFiles.count)))
+            self.view?.displayTrackSelection(AddToPlaylistModel.TrackSelection.ViewModel(indexPath: response.indexPath, isSelected: response.selectedAudioFiles.count > 0, selectedAudioFilesCount: String(response.selectedAudioFiles.count)))
         }
     }
     

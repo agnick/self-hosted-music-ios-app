@@ -1,10 +1,3 @@
-//
-//  BaseENV.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 19.02.2025.
-//
-
 import Foundation
 
 class BaseENV {
@@ -27,6 +20,10 @@ final class DebugENV: BaseENV, APIKeyable {
         dict.object(forKey: "DROPBOX_APP_KEY") as? String ?? ""
     }
     
+    var GOOGLE_CLIENT_ID: String {
+        dict.object(forKey: "GOOGLE_CLIENT_ID") as? String ?? ""
+    }
+    
     init() {
         super.init(resourceName: "DEBUG-keys")
     }
@@ -35,6 +32,10 @@ final class DebugENV: BaseENV, APIKeyable {
 final class ProdENV: BaseENV, APIKeyable {    
     var DROPBOX_APP_KEY: String {
         dict.object(forKey: "DROPBOX_APP_KEY") as? String ?? ""
+    }
+    
+    var GOOGLE_CLIENT_ID: String {
+        dict.object(forKey: "GOOGLE_CLIENT_ID") as? String ?? ""
     }
     
     init() {

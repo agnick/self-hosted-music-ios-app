@@ -1,21 +1,10 @@
-//
-//  MyMusicAssembly.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 17.01.2025.
-//
-
 import UIKit
 
 enum MyMusicAssembly {
-    static func build() -> UIViewController {
+    static func build(container: AppDIContainer) -> UIViewController {
         let presenter = MyMusicPresenter()
-        let cloudAuthService = CloudAuthService()
-        let cloudAudioService = CloudAudioService(cloudAuthService: cloudAuthService)
-        let localAudioService = LocalAudioService()
-        let audioPlayerService = AudioPlayerService()
-        let userDefaultsManager = UserDefaultsManager()
-        let interactor = MyMusicInteractor(presenter: presenter, cloudAuthService: cloudAuthService, cloudAudioService: cloudAudioService, localAudioService: localAudioService, audioPlayerService: audioPlayerService, userDefaultsManager: userDefaultsManager)
+        let worker = MyMusicWorker(coreDataManager: container.coreDataManager)
+        let interactor = MyMusicInteractor(presenter: presenter, worker: worker, cloudAuthService: container.cloudAuthService, cloudDataService: container.cloudDataService, audioPlayerService: container.audioPlayerService, userDefaultsManager: container.userDefaultsManager, coreDataManager: container.coreDataManager)
         let viewFactory = MyMusicViewFactory()
         let view = MyMusicViewController(interactor: interactor, viewFactory: viewFactory)
         presenter.view = view

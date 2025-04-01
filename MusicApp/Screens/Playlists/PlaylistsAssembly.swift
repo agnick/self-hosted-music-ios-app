@@ -1,18 +1,10 @@
-//
-//  PlaylistsAssembly.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 04.03.2025.
-//
-
 import UIKit
 
 enum PlaylistsAssembly {
-    static func build() -> UIViewController {
+    static func build(container: AppDIContainer) -> UIViewController {
         let presenter = PlaylistsPresenter()
-        let coreDataManager = CoreDataManager()
-        let userDefaultsManager = UserDefaultsManager()
-        let interactor = PlaylistsInteractor(presenter: presenter, coreDataManager: coreDataManager, userDefaultsManager: userDefaultsManager)
+        let worker = PlaylistsWorker(coreDataManager: container.coreDataManager)
+        let interactor = PlaylistsInteractor(presenter: presenter, worker: worker, coreDataManager: container.coreDataManager, userDefaultsManager: container.userDefaultsManager, cloudAuthService: container.cloudAuthService, cloudDataService: container.cloudDataService, audioPlayerService: container.audioPlayerService)
         let view = PlaylistsViewController(interactor: interactor)
         presenter.view = view
         

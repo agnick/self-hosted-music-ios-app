@@ -1,10 +1,3 @@
-//
-//  PlayerViewFactory.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 27.02.2025.
-//
-
 import UIKit
 
 final class PlayerViewFactory {

@@ -1,10 +1,3 @@
-//
-//  AudioImportViewController.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 28.12.2024.
-//
-
 import UIKit
 import UniformTypeIdentifiers
 
@@ -82,7 +75,7 @@ final class AudioImportViewController: UIViewController {
         ]
         
         self.presentAlert(
-            title: "Выйти из \(viewModel.currentService.displayName)?",
+            title: "Выйти из \(viewModel.currentService.rawValue)?",
             message: "Чтобы войти в другой облачный сервис, нужно выйти из текущего. Все загруженные файлы останутся доступны локально.",
             actions: actions
         )
@@ -252,8 +245,6 @@ extension AudioImportViewController: UIDocumentPickerDelegate {
             return
         }
         
-        Task {
-            await interactor.copySelectedFilesToAppSupportFolder(AudioImportModel.LocalFiles.Request(urls: urls))
-        }
+        interactor.copySelectedFilesToAppSupportFolder(AudioImportModel.LocalFiles.Request(urls: urls))
     }
 }

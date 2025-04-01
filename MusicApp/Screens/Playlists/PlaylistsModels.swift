@@ -1,9 +1,4 @@
-//
-//  PlaylistsModels.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 04.03.2025.
-//
+import Foundation
 
 enum PlaylistsModel {
     enum Sort {
@@ -33,6 +28,48 @@ enum PlaylistsModel {
     enum Search {
         struct Request {
             let query: String
+        }
+    }
+    
+    enum Edit {
+        struct Response {
+            let isEditingMode: Bool
+        }
+        
+        struct ViewModel {
+            let isEditingMode: Bool
+        }
+    }
+    
+    enum TrackSelection {
+        struct Request {
+            let index: Int
+        }
+        
+        struct Response {
+            let index: Int
+            let selectedCount: Int
+        }
+        
+        struct ViewModel {
+            let index: Int
+            let isSelected: Bool
+        }
+    }
+    
+    enum LoadPlaylist {
+        struct Request {
+            let index: Int
+        }
+    }
+    
+    enum Error {
+        struct Response {
+            let error: Swift.Error
+        }
+        
+        struct ViewModel {
+            let errorDescription: String
         }
     }
 }

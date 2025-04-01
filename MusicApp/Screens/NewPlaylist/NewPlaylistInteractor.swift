@@ -1,31 +1,44 @@
-//
-//  NewPlaylistInteractor.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 04.03.2025.
-//
-
 import Foundation
 import UIKit
 
 final class NewPlaylistInteractor: NewPlaylistBusinessLogic, NewPlaylistDataStore {
-    // MARK: - Variables
+    // MARK: - Enums
+    private enum PlaylistCreationError: LocalizedError {
+        case emptyName
+        
+        var errorDescription: String? {
+            switch self {
+            case .emptyName: return "Введите название плейлиста"
+            }
+        }
+    }
+
+    // MARK: - Dependencies
     private let presenter: NewPlaylistPresentationLogic
     private let worker: NewPlaylistWorkerProtocol
+    private let coreDataManager: CoreDataManager
+    private let userDefaultsManager: UserDefaultsManager
+    private let cloudAuthService: CloudAuthService
     
+    // MARK: - States
     var selectedTracks: [AudioFile] = []
     private var playlistImage: UIImage?
     private var playlistName: String?
+    private let mode: PlaylistEditingMode
     
     // MARK: - Lifecycle
-    init (presenter: NewPlaylistPresentationLogic, worker: NewPlaylistWorkerProtocol) {
+    init (mode: PlaylistEditingMode, presenter: NewPlaylistPresentationLogic, worker: NewPlaylistWorkerProtocol, coreDataManager: CoreDataManager, userDefaultsManager: UserDefaultsManager, cloudAuthService: CloudAuthService) {
+        self.mode = mode
         self.presenter = presenter
         self.worker = worker
+        self.coreDataManager = coreDataManager
+        self.userDefaultsManager = userDefaultsManager
+        self.cloudAuthService = cloudAuthService
     }
     
     // MARK: - Public methods
     func loadTrackPicker() {
-        let addToPlaylistVC = AddToPlaylistAssembly.build()
+        let addToPlaylistVC = AddToPlaylistAssembly.build(coreDataManager: coreDataManager, userDefaultsManager: userDefaultsManager, cloudAuthService: cloudAuthService)
         guard
             let delegate = presenter.getAddToPlaylistDelegate()
         else {
@@ -69,10 +82,8 @@ final class NewPlaylistInteractor: NewPlaylistBusinessLogic, NewPlaylistDataStor
     }
     
     func loadSelectedTracks(_ request: NewPlaylistModel.SelectedTracks.Request) {
-        for audioFile in request.audioFiles {
-            if !selectedTracks.contains(audioFile) {
-                selectedTracks.append(audioFile)
-            }
+        for audioFile in request.audioFiles where !selectedTracks.contains(where: { $0.playbackUrl == audioFile.playbackUrl }) {
+            selectedTracks.append(audioFile)
         }
         
         presenter.presentSelectedTracks()
@@ -89,7 +100,45 @@ final class NewPlaylistInteractor: NewPlaylistBusinessLogic, NewPlaylistDataStor
     }
     
     func savePlaylist() {
-        let playlist = Playlist(image: playlistImage, title: playlistName, audios: selectedTracks)
-        worker.savePlaylistToCoreData(playlist: playlist)
+        guard
+            let name = playlistName, !name.trimmingCharacters(in: .whitespaces).isEmpty
+        else {
+            presenter.presentError(NewPlaylistModel.Error.Response(error: PlaylistCreationError.emptyName))
+            return
+        }
+
+        let downloaded = selectedTracks.compactMap { $0 as? DownloadedAudioFile }
+        let remote = selectedTracks.compactMap { $0 as? RemoteAudioFile }
+        
+        let playlist: Playlist
+        switch mode {
+        case .create:
+            playlist = Playlist(
+                id: UUID(),
+                image: playlistImage,
+                title: name,
+                downloadedAudios: downloaded,
+                remoteAudios: remote
+            )
+        case .edit(let existing):
+            playlist = Playlist(
+                id: existing.id,
+                image: playlistImage,
+                title: name,
+                downloadedAudios: downloaded,
+                remoteAudios: remote
+            )
+        }
+        
+        do {
+            try worker.savePlaylistToCoreData(mode: mode, playlist: playlist)
+            presenter.presentPlaylistSavedSuccessfully()
+        } catch {
+            presenter.presentError(NewPlaylistModel.Error.Response(error: error))
+        }
+    }
+    
+    func loadHardSetImage(_ request: NewPlaylistModel.HardSetImage.Request) {
+        playlistImage = request.image
     }
 }

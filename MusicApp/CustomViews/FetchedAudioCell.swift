@@ -1,10 +1,3 @@
-//
-//  FetchedAudioCell.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 19.01.2025.
-//
-
 import UIKit
 
 protocol FetchedAudioCellDelegate: AnyObject {
@@ -27,20 +20,26 @@ final class FetchedAudioCell: UITableViewCell {
         
         // audioImg settings.
         static let audioImgLeading: CGFloat = 15
-        static let audioImgHeight: CGFloat = 50
-        static let audioImgWidth: CGFloat = 50
+        static let audioImgHeight: CGFloat = 60
+        static let audioImgWidth: CGFloat = 60
+        static let audioImgCornerRadius: CGFloat = 10
         
         // audioNameLabel settings.
         static let audioNameLabelFontSize: CGFloat = 16
-        static let audioNameLabelLeading: CGFloat = 16
-        static let audioNameLabelTrailing: CGFloat = 20
         static let audioNameLabelNumberOfLines: Int = 1
+        
+        // audioSourceLabel settings.
+        static let audioSourceLabelFontSize: CGFloat = 10
+        static let audioSourceLabelNumberOfLines: Int = 1
         
         // artistNameLabel settings.
         static let artistNameLabelFontSize: CGFloat = 10
-        static let artistNameLabelLeading: CGFloat = 16
-        static let artistNameLabelTrailing: CGFloat = 20
         static let artistNameLabelNumberOfLines: Int = 1
+        
+        // audioTitlesStack settings.
+        static let audioTitlesStackSpacing: CGFloat = 5
+        static let audioTitlesStackLeading: CGFloat = 15
+        static let audioTitlesStackTrailing: CGFloat = 20
         
         // audioDuration settings.
         static let audioDurationFontSize: CGFloat = 12
@@ -65,13 +64,15 @@ final class FetchedAudioCell: UITableViewCell {
     // UI Components.
     private let audioImg: UIImageView = UIImageView()
     private let checkBox: UIButton = UIButton(type: .system)
-    private let audioNameLabel: UILabel = UILabel()
-    private let artistNameLabel: UILabel = UILabel()
+    private let audioTitlesStack: UIStackView = UIStackView()
+    private var audioNameLabel: UILabel?
+    private var audioSourceLabel: UILabel?
+    private var artistNameLabel: UILabel?
     private let audioDuration: UILabel = UILabel()
     private let meatballsMenu: UIButton = UIButton(type: .system)
     private let wrap: UIView = UIView()
     
-    private var wrapLeftConstraint: NSLayoutConstraint!
+    private var wrapLeftConstraint: NSLayoutConstraint?
     private var isPicked: Bool = false
     
     weak var delegate: FetchedAudioCellDelegate?
@@ -108,22 +109,34 @@ final class FetchedAudioCell: UITableViewCell {
     }
     
     // MARK: - Public Methods
-    func configure(isEditingMode: Bool, img: UIImage = UIImage(image: .icAudioImg), isSelected: Bool, audioName: String, artistName: String, duration: Double?, audioFile: AudioFile) {
+    func configure(isEditingMode: Bool, img: UIImage, isSelected: Bool, audioName: String, artistName: String, duration: Double?, source: RemoteAudioSource?? = nil, audioFile: AudioFile) {
         self.audioFile = audioFile
         audioImg.image = img
-        audioNameLabel.text = audioName
-        artistNameLabel.text = artistName
+        audioNameLabel?.text = audioName
+        artistNameLabel?.text = artistName
         audioDuration.text = formatDuration(duration) ?? ""
+        
+        if let actual = source {
+            if let unwrappedSource = actual {
+                audioSourceLabel?.isHidden = false
+                audioSourceLabel?.text = "Источник: \(unwrappedSource.rawValue)"
+            } else {
+                audioSourceLabel?.isHidden = false
+                audioSourceLabel?.text = "Источник: скаченные"
+            }
+        } else {
+            audioSourceLabel?.isHidden = true
+        }
         
         checkBox.isHidden = !isEditingMode
         
         updateCheckBoxState(isPicked: isSelected)
         
         if isEditingMode {
-            wrapLeftConstraint.constant = Constants.checkBoxLeft + Constants.checkBoxWidth + Constants.wrapEditingLeading
+            wrapLeftConstraint?.constant = Constants.checkBoxLeft + Constants.checkBoxWidth + Constants.wrapEditingLeading
             meatballsMenu.isHidden = true
         } else {
-            wrapLeftConstraint.constant = Constants.wrapOffsetH
+            wrapLeftConstraint?.constant = Constants.wrapOffsetH
             meatballsMenu.isHidden = false
         }
         
@@ -147,8 +160,7 @@ final class FetchedAudioCell: UITableViewCell {
         configureImportOptionImg()
         configureMeatballsMenu()
         configureAudioDuration()
-        configureImportOptionTitle()
-        configureArtistNameLabel()
+        configureAudioTitlesStack()
     }
     
     private func configureCheckBox() {
@@ -187,6 +199,7 @@ final class FetchedAudioCell: UITableViewCell {
         // Image settings.
         audioImg.contentMode = .scaleAspectFill
         audioImg.clipsToBounds = true
+        audioImg.layer.cornerRadius = Constants.audioImgCornerRadius
         
         // Image constraints.
         audioImg.pinLeft(to: wrap, Constants.audioImgLeading)
@@ -195,34 +208,41 @@ final class FetchedAudioCell: UITableViewCell {
         audioImg.setHeight(Constants.audioImgHeight)
     }
     
-    private func configureImportOptionTitle() {
-        wrap.addSubview(audioNameLabel)
+    private func configureAudioTitlesStack() {
+        wrap.addSubview(audioTitlesStack)
         
-        // Title settings.
+        audioTitlesStack.axis = .vertical
+        audioTitlesStack.spacing = Constants.audioTitlesStackSpacing
+        
+        let audioNameLabel = UILabel()
         audioNameLabel.font = .systemFont(ofSize: Constants.audioNameLabelFontSize, weight: .medium)
         audioNameLabel.textColor = .black
         audioNameLabel.numberOfLines = Constants.audioNameLabelNumberOfLines
         audioNameLabel.lineBreakMode = .byTruncatingTail
-
-        // Title constraints.
-        audioNameLabel.pinLeft(to: audioImg.trailingAnchor, Constants.audioNameLabelLeading)
-        audioNameLabel.pinRight(to: audioDuration.leadingAnchor, Constants.audioNameLabelTrailing)
-        audioNameLabel.pinTop(to: audioImg.topAnchor)
-    }
-    
-    private func configureArtistNameLabel() {
-        wrap.addSubview(artistNameLabel)
         
-        // Title settings.
+        let artistNameLabel = UILabel()
         artistNameLabel.font = .systemFont(ofSize: Constants.artistNameLabelFontSize, weight: .medium)
         artistNameLabel.textColor = .systemGray
         artistNameLabel.numberOfLines = Constants.artistNameLabelNumberOfLines
         artistNameLabel.lineBreakMode = .byTruncatingTail
         
-        // Title constraints.
-        artistNameLabel.pinLeft(to: audioImg.trailingAnchor, Constants.artistNameLabelLeading)
-        artistNameLabel.pinRight(to: audioDuration.leadingAnchor, Constants.artistNameLabelTrailing)
-        artistNameLabel.pinBottom(to: audioImg.bottomAnchor)
+        let audioSourceLabel = UILabel()
+        audioSourceLabel.font = .systemFont(ofSize: Constants.audioSourceLabelFontSize, weight: .medium)
+        audioSourceLabel.textColor = UIColor(color: .primary)
+        audioSourceLabel.numberOfLines = Constants.audioSourceLabelNumberOfLines
+        audioSourceLabel.lineBreakMode = .byTruncatingTail
+        
+        audioTitlesStack.addArrangedSubview(audioNameLabel)
+        audioTitlesStack.addArrangedSubview(artistNameLabel)
+        audioTitlesStack.addArrangedSubview(audioSourceLabel)
+        
+        self.audioNameLabel = audioNameLabel
+        self.artistNameLabel = artistNameLabel
+        self.audioSourceLabel = audioSourceLabel
+        
+        audioTitlesStack.pinLeft(to: audioImg.trailingAnchor, Constants.audioTitlesStackLeading)
+        audioTitlesStack.pinRight(to: audioDuration.leadingAnchor, Constants.audioTitlesStackTrailing)
+        audioTitlesStack.pinCenterY(to: wrap)
     }
     
     private func configureAudioDuration() {

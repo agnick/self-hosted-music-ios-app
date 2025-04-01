@@ -1,10 +1,3 @@
-//
-//  NewPlaylistViewController.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 04.03.2025.
-//
-
 import UIKit
 import UniformTypeIdentifiers
 
@@ -23,6 +16,7 @@ final class NewPlaylistViewController: UIViewController {
         
         // pickImageButton settings.
         static let pickImageButtonSize: CGFloat = 200
+        static let pickImageButtonCornerRadius: CGFloat = 10
         
         // addTracksButton settings.
         static let addTracksButtonPadding: CGFloat = 10
@@ -38,8 +32,8 @@ final class NewPlaylistViewController: UIViewController {
     }
     
     // MARK: - Variables
-    // Playlists screen interactor, it contains all bussiness logic.
     private let interactor: (NewPlaylistBusinessLogic & NewPlaylistDataStore)
+    private let mode: PlaylistEditingMode
     
     /* UI components */
     // View stacks.
@@ -61,8 +55,10 @@ final class NewPlaylistViewController: UIViewController {
     private let audioTable: UITableView = UITableView(frame: .zero)
     
     // MARK: - Lifecycle
-    init(interactor: (NewPlaylistBusinessLogic & NewPlaylistDataStore)) {
+    init(mode: PlaylistEditingMode, interactor: (NewPlaylistBusinessLogic & NewPlaylistDataStore)) {
+        self.mode = mode
         self.interactor = interactor
+        
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -78,6 +74,19 @@ final class NewPlaylistViewController: UIViewController {
         
         // Configure all UI elements and layout.
         configureUI()
+        setupGestures()
+        
+        if case let .edit(playlist) = mode {
+            pickImageButton?.setBackgroundImage(playlist.image, for: .normal)
+            playlistImage = playlist.image
+            interactor.loadHardSetImage(NewPlaylistModel.HardSetImage.Request(image: playlist.image))
+            
+            playlistNameTextView?.text = playlist.title
+            playlistNameTextView?.textColor = .black
+            
+            interactor.loadPlaylistName(NewPlaylistModel.PlaylistName.Request(playlistName: playlist.title))
+            interactor.loadSelectedTracks(NewPlaylistModel.SelectedTracks.Request(audioFiles: playlist.downloadedAudios + playlist.remoteAudios))
+        }
     }
     
     // MARK: - Tab bar actions
@@ -93,7 +102,6 @@ final class NewPlaylistViewController: UIViewController {
         }
         
         interactor.savePlaylist()
-        navigationController?.popViewController(animated: true)
     }
     
     // MARK: - Playlist creation actions
@@ -105,11 +113,16 @@ final class NewPlaylistViewController: UIViewController {
         interactor.loadTrackPicker()
     }
     
+    // MARK: - Keyboard actions
+    @objc private func dismissKeyboard() {
+        view.endEditing(true)
+    }
+    
     // MARK: - Public methods
     func displayCellData(_ viewModel: NewPlaylistModel.CellData.ViewModel) {
         guard let cell = audioTable.cellForRow(at: IndexPath(row: viewModel.index, section: 0)) as? PlaylistEditAudioCell else { return }
         
-        cell.configure(audioName: viewModel.name, artistName: viewModel.artistName, duration: viewModel.durationInSeconds)
+        cell.configure(img: viewModel.image, audioName: viewModel.name, artistName: viewModel.artistName, duration: viewModel.durationInSeconds, source: viewModel.source)
     }
     
     func displaySelectedTracks() {
@@ -166,6 +179,7 @@ final class NewPlaylistViewController: UIViewController {
         let pickImageButton: UIButton = UIButton()
         pickImageButton.setBackgroundImage(UIImage(image: .icPickImage), for: .normal)
         pickImageButton.contentMode = .scaleAspectFill
+        pickImageButton.layer.cornerRadius = Constants.pickImageButtonCornerRadius
         pickImageButton.clipsToBounds = true
         
         pickImageButton.addTarget(self, action: #selector(pickImageButtonTapped), for: .touchUpInside)
@@ -258,6 +272,11 @@ final class NewPlaylistViewController: UIViewController {
         audioTable.pinHorizontal(to: view, Constants.audioTableOffset)
         audioTable.pinBottom(to: view.safeAreaLayoutGuide.bottomAnchor, Constants.audioTableBottom)
     }
+    
+    private func setupGestures() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        view.addGestureRecognizer(tapGesture)
+    }
 }
 
 // MARK: - UITextViewDelegate
@@ -276,6 +295,14 @@ extension NewPlaylistViewController: UITextViewDelegate {
         } else {
             interactor.loadPlaylistName(NewPlaylistModel.PlaylistName.Request(playlistName: textView.text))
         }
+    }
+    
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        if text == "\n" {
+            textView.resignFirstResponder()
+            return false
+        }
+        return true
     }
 }
 
@@ -323,7 +350,7 @@ extension NewPlaylistViewController: UITableViewDelegate {
     }
 }
 
-// MARK: - UIDocumentPickerDelegate
+// MARK: - UIImagePickerControllerDelegate
 extension NewPlaylistViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         picker.dismiss(animated: true)

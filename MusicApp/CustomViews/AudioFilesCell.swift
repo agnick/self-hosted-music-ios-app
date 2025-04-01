@@ -1,10 +1,3 @@
-//
-//  AudioFilesCell.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 07.01.2025.
-//
-
 import UIKit
 
 final class AudioFilesCell: UITableViewCell {
@@ -19,6 +12,7 @@ final class AudioFilesCell: UITableViewCell {
         static let audioImgLeading: CGFloat = 15
         static let audioImgHeight: CGFloat = 50
         static let audioImgWidth: CGFloat = 50
+        static let audioImgCornerRadius: CGFloat = 10
         
         // audioNameLabel settings.
         static let audioNameLabelFontSize: CGFloat = 16
@@ -68,7 +62,8 @@ final class AudioFilesCell: UITableViewCell {
     }
     
     // MARK: - Public Methods
-    func configure(_ audioName: String, _ audioSize: Double, downloadState: DownloadState) {
+    func configure(_ audioImage: UIImage, _ audioName: String, _ audioSize: Double, downloadState: RemoteDownloadState) {
+        audioImg.image = audioImage
         audioNameLabel.text = audioName
         audioSizeLabel.text = "\(String(format: "%.1f", audioSize)) MB"
         
@@ -108,6 +103,7 @@ final class AudioFilesCell: UITableViewCell {
         // Image settings.
         audioImg.contentMode = .scaleAspectFill
         audioImg.clipsToBounds = true
+        audioImg.layer.cornerRadius = AudioFilesCellConstants.audioImgCornerRadius
         
         // Image constraints.
         audioImg.pinLeft(to: wrap, AudioFilesCellConstants.audioImgLeading)
@@ -170,7 +166,7 @@ final class AudioFilesCell: UITableViewCell {
     }
     
     // MARK: Utility private methods
-    private func setDownloadButtonImage(_ downloadState: DownloadState) {
+    private func setDownloadButtonImage(_ downloadState: RemoteDownloadState) {
         switch downloadState {
         case .downloaded:
             activityIndicator.stopAnimating()

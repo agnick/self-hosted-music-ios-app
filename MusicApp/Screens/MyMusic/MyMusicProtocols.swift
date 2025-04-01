@@ -1,42 +1,34 @@
-//
-//  MyMusicProtocols.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 17.01.2025.
-//
+import UIKit
 
 protocol MyMusicBusinessLogic {
-    func loadStart(_ request: MyMusicModel.Start.Request)
+    func loadStart()
     func sortAudioFiles(_ request: MyMusicModel.Sort.Request)
     func searchAudioFiles(_ request: MyMusicModel.Search.Request)
     func playSelectedTrack(_ request: MyMusicModel.Play.Request)
     func playInOrder()
     func playShuffle()
     func playNextTrack()
-    // Delete tracks.
     func handleDeleteSelectedTracks(_ request: MyMusicModel.HandleDelete.Request)
     func deleteSelectedTracks(_ request: MyMusicModel.Delete.Request)
-    // Update AudioFiles
     func updateAudioFiles(_ request: MyMusicModel.UpdateAudio.Request)
-    // Edit mode
-    func loadEdit(_ request: MyMusicModel.Edit.Request)
-    // Pick all
-    func pickAll(_ request: MyMusicModel.PickTracks.Request)
-    // Sort options
+    func loadEdit()
+    func pickAll()
     func loadSortOptions()
-    // Select track
     func toggleTrackSelection(_ request: MyMusicModel.TrackSelection.Request)
-    // Reset cloud cache
-    func resetCloudCache()
     func downloadTrack(_ request: MyMusicModel.Download.Request)
     func deleteTrack(_ request: MyMusicModel.DeleteTrack.Request)
+    func addToPlaylist(_ request: MyMusicModel.AddToPlaylist.Request)
+    func addSelectedTracksToPlaylist(_ request: MyMusicModel.AddSelectedToPlaylist.Request)
+    func loadPlaylistOptions(_ request: MyMusicModel.PlaylistsOptions.Request)
+    func loadPlaylistOptionsForSelectedTracks()
+    func loadEditAudioScreen(_ request: MyMusicModel.EditAudio.Request)
 }
 
 protocol MyMusicDataStore {
     var currentAudioFiles: [AudioFile] { get set }
     var selectedTracks: Set<String> { get set }
     var isEditingModeEnabled: Bool { get }
-    var currentService: CloudServiceType? { get }
+    var currentService: RemoteAudioSource? { get set }
 }
 
 protocol MyMusicPresentationLogic {
@@ -50,11 +42,15 @@ protocol MyMusicPresentationLogic {
     func presentNotConnectedMessage()
     func presentDeleteAlert(_ response: MyMusicModel.DeleteAlert.Response)
     func presentError(_ response: MyMusicModel.Error.Response)
+    func presentPlaylistOptions(_ response: MyMusicModel.PlaylistsOptions.Response)
     
-    func routeTo()
+    func routeTo(vc: UIViewController)
 }
 
 protocol MyMusicWorkerProtocol {
-    func saveSortPreference(_ sortType: SortType)
-    func loadSortPreference() -> SortType
+    func saveToPlaylist(_ audioFile: AudioFile, to playlist: PlaylistEntity) throws
+    func getAllPlaylists() -> [PlaylistEntity]
+    func fetchRemoteAudioFiles(from source: RemoteAudioSource) -> [RemoteAudioFile]
+    func fetchDownloadedAudioFiles() -> [DownloadedAudioFile]
+    func deleteDownloadedAudioFile(_ audioFile: DownloadedAudioFile) throws
 }

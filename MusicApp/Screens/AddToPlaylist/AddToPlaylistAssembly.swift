@@ -1,18 +1,10 @@
-//
-//  AddToPlaylistAssembly.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 06.03.2025.
-//
-
 import UIKit
 
 enum AddToPlaylistAssembly {
-    static func build() -> AddToPlaylistViewController {
+    static func build(coreDataManager: CoreDataManager, userDefaultsManager: UserDefaultsManager, cloudAuthService: CloudAuthService) -> AddToPlaylistViewController {
         let presenter = AddToPlaylistPresenter()
-        let localAudioService = LocalAudioService()
-        let userDefaultsManager = UserDefaultsManager()
-        let interactor = AddToPlaylistInteractor(presenter: presenter, localAudioService: localAudioService, userDefaultsManager: userDefaultsManager)
+        let worker = AddToPlaylistWorker(coreDataManager: coreDataManager, userDefaultsManager: userDefaultsManager)
+        let interactor = AddToPlaylistInteractor(presenter: presenter, worker: worker, cloudAuthService: cloudAuthService)
         let viewFactory = AddToPlaylistViewFactory()
         let view = AddToPlaylistViewController(interactor: interactor, viewFactory: viewFactory)
         presenter.view = view

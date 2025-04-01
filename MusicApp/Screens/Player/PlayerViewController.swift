@@ -1,10 +1,3 @@
-//
-//  PlayerViewController.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 19.02.2025.
-//
-
 import UIKit
 
 final class PlayerViewController: UIViewController {
@@ -12,7 +5,8 @@ final class PlayerViewController: UIViewController {
     enum Constants {
         // trackImg settings.
         static let trackImgTop: CGFloat = 20
-        static let trackImgWidth: Double = 0.9
+        static let trackImgOffset: CGFloat = 20
+        static let trackImgCornerRadius: CGFloat = 10
         
         // progressSlider settings.
         static let progressSliderTop: CGFloat = 40
@@ -65,7 +59,7 @@ final class PlayerViewController: UIViewController {
     private var isSeekingInProgress = false
     
     // UI components
-    private let trackImg: UIImageView = UIImageView(image: UIImage(image: .icAudioImgSvg))
+    private let trackImg: UIImageView = UIImageView()
     private let progressSlider: UISlider = UISlider()
     private let trackLabelsStack: UIStackView = UIStackView()
     private let actionButtonsStack: UIStackView = UIStackView()
@@ -106,23 +100,46 @@ final class PlayerViewController: UIViewController {
         interactor.loadStart()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+    }
+    
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - Observer actions
     @objc private func trackChanged(_ notification: Notification) {
-        if let track = notification.object as? AudioFile {
-            trackName?.text = track.name
-            artistName?.text = track.artistName
-            
-            UIView.performWithoutAnimation {
-                progressSlider.maximumValue = Float(track.durationInSeconds ?? Double(Constants.progressSliderMinValue))
-                progressSlider.setValue(Constants.progressSliderMinValue, animated: false)
+        DispatchQueue.main.async {
+            guard let track = notification.object as? AudioFile else {
+                self.trackName?.text = "—"
+                self.artistName?.text = ""
+                self.trackImg.image  = UIImage(image: .icAudioImgSvg)
+                
+                self.progressSlider.isHidden = true
+                self.currentTrackTime?.isHidden = true
+                self.trackDuration?.isHidden = true
+                
+                self.progressSlider.value = Constants.progressSliderMinValue
+                
+                return
             }
             
-            trackDuration?.text = formatDuration(track.durationInSeconds)
-            currentTrackTime?.text = formatDuration(Double(progressSlider.value))
+            self.trackName?.text = track.name
+            self.artistName?.text = track.artistName
+            self.trackImg.image = track.trackImg
+            
+            self.progressSlider.isHidden = false
+            self.currentTrackTime?.isHidden = false
+            self.trackDuration?.isHidden = false
+            
+            UIView.performWithoutAnimation {
+                self.progressSlider.maximumValue = Float(track.durationInSeconds)
+                self.progressSlider.setValue(Constants.progressSliderMinValue, animated: false)
+            }
+            
+            self.trackDuration?.text = self.formatDuration(track.durationInSeconds)
+            self.currentTrackTime?.text = self.formatDuration(Double(self.progressSlider.value))
         }
     }
     
@@ -136,6 +153,7 @@ final class PlayerViewController: UIViewController {
     
     @objc private func updateSliderPosition(_ notification: Notification) {
         guard
+            !progressSlider.isHidden,
             let currentTime = notification.object as? Double,
             !isSeeking,
             !isSeekingInProgress
@@ -167,6 +185,10 @@ final class PlayerViewController: UIViewController {
         interactor.playNextTrack()
     }
     
+    @objc private func meatballsMenuButtonTapped() {
+        interactor.loadAudioOptions()
+    }
+    
     @objc private func sliderTouchBegan() {
         isSeeking = true
     }
@@ -191,6 +213,7 @@ final class PlayerViewController: UIViewController {
     func displayStart(_ viewModel: PlayerModel.Start.ViewModel) {
         trackName?.text = viewModel.trackName
         artistName?.text = viewModel.artistName
+        trackImg.image = viewModel.trackImage
         
         progressSlider.maximumValue = Float(viewModel.trackDuration ?? Double(Constants.progressSliderMinValue))
         progressSlider.setValue(Float(viewModel.currentTime), animated: false)
@@ -205,6 +228,20 @@ final class PlayerViewController: UIViewController {
     
     func displatRepeatState(_ viewModel: PlayerModel.Repeat.ViewModel) {
         repeatButton?.tintColor = viewModel.repeatImageColor
+    }
+    
+    func displayAudioOptions(_ viewModel: PlayerModel.AudioOptions.ViewModel) {
+        present(viewModel.alert, animated: true, completion: nil)
+    }
+    
+    func displayPlaylistsList(_ viewModel: PlayerModel.Playlists.ViewModel) {
+        present(viewModel.alert, animated: true, completion: nil)
+    }
+    
+    func displayError(_ viewModel: PlayerModel.Error.ViewModel) {
+        let actions = [UIAlertAction(title: "OK", style: .default)]
+        
+        self.presentAlert(title: "Ошибка", message: viewModel.errorDescription, actions: actions)
     }
     
     // MARK: - Private methods for UI configuring
@@ -223,13 +260,13 @@ final class PlayerViewController: UIViewController {
         view.addSubview(trackImg)
         
         // Image settings.
-        trackImg.contentMode = .scaleAspectFit
+        trackImg.contentMode = .scaleAspectFill
         trackImg.clipsToBounds = true
+        trackImg.layer.cornerRadius = Constants.trackImgCornerRadius
         
         // Image constraints.
         trackImg.pinTop(to: view.safeAreaLayoutGuide.topAnchor, Constants.trackImgTop)
-        trackImg.pinCenterX(to: view)
-        trackImg.pinWidth(to: view, Constants.trackImgWidth)
+        trackImg.pinHorizontal(to: view, Constants.trackImgOffset)
         trackImg.pinHeight(to: trackImg.widthAnchor)
     }
     
@@ -240,7 +277,7 @@ final class PlayerViewController: UIViewController {
         progressSlider.maximumValue = Constants.progressSliderMaxDefaultValue
         
         progressSlider.addTarget(self, action: #selector(sliderTouchBegan), for: .touchDown)
-        progressSlider.addTarget(self, action: #selector(sliderTouchEnded), for: [.touchUpInside, .touchUpOutside])
+        progressSlider.addTarget(self, action: #selector(sliderTouchEnded), for: [.touchUpInside, .touchUpOutside, .touchCancel])
         progressSlider.addTarget(self, action: #selector(sliderValueChanged), for: .valueChanged)
 
         
@@ -321,6 +358,8 @@ final class PlayerViewController: UIViewController {
         prevTrackButton.addTarget(self, action: #selector(playPrevTrack), for: .touchUpInside)
         playPauseButton.addTarget(self, action: #selector(playPause), for: .touchUpInside)
         nextTrackButton.addTarget(self, action: #selector(playNextTrack), for: .touchUpInside)
+        meatballsMenuButton.addTarget(self, action: #selector(meatballsMenuButtonTapped), for: .touchUpInside)
+        
         
         // Add buttons to view.
         [repeatButton, prevTrackButton, playPauseButton, nextTrackButton, meatballsMenuButton].forEach {

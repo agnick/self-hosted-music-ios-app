@@ -1,20 +1,15 @@
-//
-//  AudioFilesOverviewScreenPresenter.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 07.01.2025.
-//
-
 import UIKit
 
 final class AudioFilesOverviewScreenPresenter: AudioFilesOverviewScreenPresentationLogic {
+    // MARK: - Dependencies
     weak var view: AudioFilesOverviewScreenViewController?
     
+    // MARK: - Public methods
     func presentStart(
         _ response: AudioFilesOverviewScreenModel.Start.Response
     ) {
         DispatchQueue.main.async {
-            let serviceName = response.service.displayName
+            let serviceName = response.service.rawValue
             self.view?
                 .displayStart(
                     AudioFilesOverviewScreenModel.Start
@@ -38,7 +33,7 @@ final class AudioFilesOverviewScreenPresenter: AudioFilesOverviewScreenPresentat
             let audioFilesCount = response.audioFiles?.count ?? 0
             self.view?.displayAudioFiles(
                 AudioFilesOverviewScreenModel.FetchedFiles
-                    .ViewModel(audioFilesCount: audioFilesCount)
+                    .ViewModel(audioFilesCount: audioFilesCount, isUserInitiated: response.isUserInitiated)
             )
         }
     }
@@ -53,10 +48,5 @@ final class AudioFilesOverviewScreenPresenter: AudioFilesOverviewScreenPresentat
                         .ViewModel(fileName: response.fileName, isDownloaded: response.isDownloaded)
                 )
         }
-    }
-    
-    func routeTo() {
-        view?.navigationController?
-            .pushViewController(UIViewController(), animated: true)
     }
 }

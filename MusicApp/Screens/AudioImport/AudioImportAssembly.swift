@@ -1,18 +1,16 @@
-//
-//  AudioImportAssembly.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 28.12.2024.
-//
-
 import UIKit
 
 enum AudioImportAssembly {
-    static func build() -> UIViewController {
+    static func build(сontainer: AppDIContainer) -> UIViewController {
         let presenter = AudioImportPresenter()
-        let cloudAuthService = CloudAuthService()
-        let worker = AudioImportWorker()
-        let interactor = AudioImportInteractor(presenter: presenter, cloudAuthService: cloudAuthService, worker: worker)
+        let worker = AudioImportWorker(coreDataManager: сontainer.coreDataManager)
+        let interactor = AudioImportInteractor(
+            presenter: presenter,
+            worker: worker,
+            cloudAuthService: сontainer.cloudAuthService,
+            cloudDataService: сontainer.cloudDataService,
+            coreDataManager: сontainer.coreDataManager
+        )
         let view = AudioImportViewController(interactor: interactor)
         presenter.view = view
         

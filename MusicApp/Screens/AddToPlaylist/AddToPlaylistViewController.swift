@@ -1,10 +1,3 @@
-//
-//  AddToPlaylistViewController.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 06.03.2025.
-//
-
 import UIKit
 
 protocol AddToPlaylistDelegate: AnyObject {
@@ -13,7 +6,7 @@ protocol AddToPlaylistDelegate: AnyObject {
 
 final class AddToPlaylistViewController: UIViewController {
     // MARK: - Enums
-    enum Constants {
+    private enum Constants {
         // titleLabel settings.
         static let titleLabelFontSize: CGFloat = 32
         static let titleLabelLeading: CGFloat = 20
@@ -56,6 +49,20 @@ final class AddToPlaylistViewController: UIViewController {
         static let trackCounterStackViewOffset: CGFloat = 20
     }
     
+    private enum Section: Int, CaseIterable {
+        case cloud
+        case downloaded
+        
+        var title: String {
+            switch self {
+            case .cloud:
+                return "Облачные треки"
+            case .downloaded:
+                return "Скаченные треки"
+            }
+        }
+    }
+    
     // MARK: - Variables
     // AddToPlaylist screen interactor, it contains all bussiness logic.
     private let interactor: (AddToPlaylistBusinessLogic & AddToPlaylistDataStore)
@@ -83,6 +90,15 @@ final class AddToPlaylistViewController: UIViewController {
     )
     private let trackCounterStackView: UIStackView = UIStackView()
     
+    // Section helpers
+    private var cloudFiles: [AudioFile] {
+        interactor.currentAudioFiles.filter { $0 is RemoteAudioFile }
+    }
+    
+    private var downloadedFiles: [AudioFile] {
+        interactor.currentAudioFiles.filter { $0 is DownloadedAudioFile }
+    }
+    
     // MARK: - Lifecycle
     init(interactor: (AddToPlaylistBusinessLogic & AddToPlaylistDataStore), viewFactory: AddToPlaylistViewFactory) {
         self.interactor = interactor
@@ -103,7 +119,7 @@ final class AddToPlaylistViewController: UIViewController {
         // Configure all UI elements and layout.
         configureUI()
         
-        interactor.loadLocalAudioFiles()
+        interactor.loadAudioFiles()
     }
     
     // MARK: - Public methods
@@ -112,7 +128,7 @@ final class AddToPlaylistViewController: UIViewController {
         activityIndicator.startAnimating()
     }
     
-    func displayLocalAudioFiles(_ viewModel: AddToPlaylistModel.LocalAudioFiles.ViewModel) {
+    func displayAudioFiles(_ viewModel: AddToPlaylistModel.AudioFiles.ViewModel) {
         activityIndicator.stopAnimating()
         audioTable.reloadData()
         
@@ -124,19 +140,9 @@ final class AddToPlaylistViewController: UIViewController {
     }
     
     func displayTrackSelection(_ viewModel: AddToPlaylistModel.TrackSelection.ViewModel) {
-        guard
-            let cell = audioTable.cellForRow(at: IndexPath(row: viewModel.index, section: 0)) as? FetchedAudioCell
-        else {
-            return
-        }
-        
-        let audioFile = interactor.currentAudioFiles[viewModel.index]
-        let isSelected = interactor.selectedTracks.contains(audioFile.playbackUrl)
-        
-        cell.updateCheckBoxState(isPicked: isSelected)
+        audioTable.reloadRows(at: [viewModel.indexPath], with: .automatic)
         
         addButton?.isEnabled = viewModel.isSelected
-        
         setSelectedTracksCount(viewModel.selectedAudioFilesCount)
     }
     
@@ -211,7 +217,7 @@ final class AddToPlaylistViewController: UIViewController {
                 weight: .bold
             )
         titleLabel.textColor = .black
-        titleLabel.text = "Скаченная музыка"
+        titleLabel.text = "Моя музыка"
         
         // Set constraints to position the title label.
         titleLabel.pinTop(to: view.safeAreaLayoutGuide.topAnchor)
@@ -221,7 +227,7 @@ final class AddToPlaylistViewController: UIViewController {
     private func configureSearchBar() {
         view.addSubview(searchBar)
         
-        searchBar.placeholder = "Искать в скаченной музыке"
+        searchBar.placeholder = "Искать в моей музыке"
         searchBar.searchBarStyle = .minimal
         searchBar.backgroundImage = UIImage()
         searchBar.delegate = self
@@ -325,6 +331,17 @@ final class AddToPlaylistViewController: UIViewController {
     private func setSelectedTracksCount(_ selectedTracksCount: String) {
         selectedTracksCountLabel?.text = "Выбрано: \(selectedTracksCount)"
     }
+    
+    private func audioFile(for indexPath: IndexPath) -> AudioFile {
+        switch Section(rawValue: indexPath.section) {
+        case .cloud:
+            return cloudFiles[indexPath.row]
+        case .downloaded:
+            return downloadedFiles[indexPath.row]
+        case .none:
+            return [] as! AudioFile
+        }
+    }
 }
 
 // MARK: - UISearchBarDelegate
@@ -342,8 +359,19 @@ extension AddToPlaylistViewController: UISearchBarDelegate {
 
 // MARK: - UITableViewDataSource
 extension AddToPlaylistViewController: UITableViewDataSource {
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return Section.allCases.count
+    }
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return interactor.currentAudioFiles.count
+        switch Section(rawValue: section) {
+        case .cloud:
+            return cloudFiles.count
+        case .downloaded:
+            return downloadedFiles.count
+        default:
+            return Int()
+        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -352,13 +380,23 @@ extension AddToPlaylistViewController: UITableViewDataSource {
             for: indexPath
         ) as! FetchedAudioCell
         
-        let audioFile = interactor.currentAudioFiles[indexPath.row]
+        let audioFile = audioFile(for: indexPath)
         let isSelected = interactor.selectedTracks.contains(audioFile.playbackUrl)
         
         cell.delegate = self
-        cell.configure(isEditingMode: true, isSelected: isSelected, audioName: audioFile.name, artistName: audioFile.artistName, duration: audioFile.durationInSeconds, audioFile: audioFile)
+        cell.configure(isEditingMode: true, img: audioFile.trackImg, isSelected: isSelected, audioName: audioFile.name, artistName: audioFile.artistName, duration: audioFile.durationInSeconds, audioFile: audioFile)
         
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        switch Section(rawValue: section) {
+        case .cloud where cloudFiles.isEmpty:
+            return nil
+        case .downloaded where downloadedFiles.isEmpty:
+            return nil
+        default: return Section(rawValue: section)?.title
+        }
     }
 }
 
@@ -376,9 +414,8 @@ extension AddToPlaylistViewController: UITableViewDelegate {
 // MARK: - FetchedAudioCellDelegate
 extension AddToPlaylistViewController: FetchedAudioCellDelegate {
     func didTapCheckBox(in cell: FetchedAudioCell) {
-        guard let indexPath = audioTable.indexPath(for: cell) else { return }
-        
-        
-        interactor.toggleTrackSelection(AddToPlaylistModel.TrackSelection.Request(index: indexPath.row))
+        guard let indexPath = audioTable.indexPath(for: cell), let audioFile = cell.audioFile else { return }
+                
+        interactor.toggleTrackSelection(AddToPlaylistModel.TrackSelection.Request(audioFile: audioFile, indexPath: indexPath))
     }
 }

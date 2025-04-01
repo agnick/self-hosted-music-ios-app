@@ -1,58 +1,45 @@
-//
-//  PlaylistsInteractor.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 04.03.2025.
-//
-
-import CoreData
 import UIKit
+import CoreData
 
 final class PlaylistsInteractor: PlaylistsBusinessLogic, PlaylistsDataStore {
-    // MARK: - Variables
+    // MARK: - Dependencies
     private let presenter: PlaylistsPresentationLogic
+    private let worker: PlaylistsWorkerProtocol
     private let coreDataManager: CoreDataManager
     private let userDefaultsManager: UserDefaultsManager
+    private let cloudAuthService: CloudAuthService
+    private let cloudDataService: CloudDataService
+    private let audioPlayerService: AudioPlayerService
     
+    // MARK: - States
     var playlists: [Playlist] = []
+    var selectedPlaylistIDs: Set<UUID> = []
+    var isEditingModeEnabled: Bool = false
     private var fetchedPlaylists: [Playlist] = []
     private var searchQuery: String = ""
     
     // MARK: - Lifecycle
-    init (presenter: PlaylistsPresentationLogic, coreDataManager: CoreDataManager, userDefaultsManager: UserDefaultsManager) {
+    init (presenter: PlaylistsPresentationLogic, worker: PlaylistsWorkerProtocol, coreDataManager: CoreDataManager, userDefaultsManager: UserDefaultsManager, cloudAuthService: CloudAuthService, cloudDataService: CloudDataService, audioPlayerService: AudioPlayerService) {
         self.presenter = presenter
+        self.worker = worker
         self.coreDataManager = coreDataManager
         self.userDefaultsManager = userDefaultsManager
+        self.cloudAuthService = cloudAuthService
+        self.cloudDataService = cloudDataService
+        self.audioPlayerService = audioPlayerService
     }
     
     // MARK: - Public methods
     func createPlaylist() {
-        presenter.routeTo(vc: NewPlaylistAssembly.build(coreDataManager: coreDataManager))
+        presenter.routeTo(vc: NewPlaylistAssembly.buildCreate(coreDataManager: coreDataManager, userDefaultsManager: userDefaultsManager, cloudAuthService: cloudAuthService))
     }
     
     func fetchAllPlaylists() {
-        let context = coreDataManager.context
-        let request: NSFetchRequest<PlaylistEntity> = PlaylistEntity.fetchRequest()
-        request.relationshipKeyPathsForPrefetching = ["audioFiles"]
-        
         do {
-            let entities = try context.fetch(request)
-            
-            fetchedPlaylists = entities.map { entity in
-                let image: UIImage = entity.image.flatMap(UIImage.init(data:)) ?? UIImage(image: .icAudioImg)
-                
-                let audioFiles = (entity.audioFiles as? Set<AudioFileEntity>)?.map { audio in
-                    AudioFile(
-                        name: audio.name ?? "", artistName: audio.artistName ?? "", sizeInMB: audio.sizeInMB, durationInSeconds: audio.durationInSeconds, downloadPath: audio.downloadPath ?? "", playbackUrl: audio.playbackUrl ?? "", downloadState: DownloadState(rawValue: audio.downloadStateRaw) ?? .notStarted, source: AudioSource(rawValue: audio.sourceRaw) ?? .local
-                    )
-                }
-                
-                return Playlist(image: image, title: entity.title, audios: audioFiles)
-            }
-            
+            fetchedPlaylists = try worker.fetchAllPlaylists()
             applySortingAndFiltering()
         } catch {
-            print("Ошибка при получении плейлистов")
+            presenter.presentError(PlaylistsModel.Error.Response(error: error))
         }
     }
     
@@ -68,6 +55,46 @@ final class PlaylistsInteractor: PlaylistsBusinessLogic, PlaylistsDataStore {
     func searchPlaylists(_ request: PlaylistsModel.Search.Request) {
         searchQuery = request.query
         applySortingAndFiltering()
+    }
+    
+    func togglePlaylistsSelection(_ request: PlaylistsModel.TrackSelection.Request) {
+        let id = playlists[request.index].id
+        
+        if selectedPlaylistIDs.contains(id) {
+            selectedPlaylistIDs.remove(id)
+        } else {
+            selectedPlaylistIDs.insert(id)
+        }
+        
+        presenter.presentTrackSelection(PlaylistsModel.TrackSelection.Response(index: request.index, selectedCount: selectedPlaylistIDs.count))
+    }
+    
+    func loadEdit() {
+        isEditingModeEnabled.toggle()
+        
+        // Clear the set of selected tracks when entering or exiting editing mode.
+        selectedPlaylistIDs.removeAll()
+        
+        presenter.presentEdit(PlaylistsModel.Edit.Response(isEditingMode: isEditingModeEnabled))
+    }
+    
+    func deleteSelectedPlaylists() {
+        do {
+            for selectedPlaylistId in selectedPlaylistIDs {
+                try worker.deletePlaylist(selectedPlaylistId)
+            }
+            
+            fetchAllPlaylists()
+            presenter.presentAllPlaylists()
+        } catch {
+            presenter.presentError(PlaylistsModel.Error.Response(error: error))
+        }
+    }
+    
+    func loadPlaylistScreen(_ request: PlaylistsModel.LoadPlaylist.Request) {
+        let playlist = playlists[request.index]
+        
+        presenter.routeTo(vc: PlaylistAssembly.build(playlist: playlist, coreDataManager: coreDataManager, cloudDataService: cloudDataService, audioPlayerService: audioPlayerService, userDefaultsManager: userDefaultsManager, cloudAuthService: cloudAuthService))
     }
     
     // MARK: - Private methods

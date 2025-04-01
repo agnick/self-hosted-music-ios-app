@@ -1,14 +1,7 @@
-//
-//  AddToPlaylistProtocols.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 06.03.2025.
-//
-
 protocol AddToPlaylistBusinessLogic {
     func toggleTrackSelection(_ request: AddToPlaylistModel.TrackSelection.Request)
     func searchAudioFiles(_ request: AddToPlaylistModel.Search.Request)
-    func loadLocalAudioFiles()
+    func loadAudioFiles()
     func pickAll()
     func sendSelectedTracks()
 }
@@ -19,7 +12,7 @@ protocol AddToPlaylistDataStore {
 }
 
 protocol AddToPlaylistPresentationLogic {
-    func presentLocalAudioFiles(_ response: AddToPlaylistModel.LocalAudioFiles.Response)
+    func presentAudioFiles(_ response: AddToPlaylistModel.AudioFiles.Response)
     func presentError(_ response: AddToPlaylistModel.Error.Response)
     func presentTrackSelection(_ response: AddToPlaylistModel.TrackSelection.Response)
     func presentPickAll(_ response: AddToPlaylistModel.PickTracks.Response)
@@ -31,4 +24,6 @@ protocol AddToPlaylistPresentationLogic {
 
 protocol AddToPlaylistWorkerProtocol {
     func loadSortPreference() -> SortType
+    func fetchDownloaded() -> [DownloadedAudioFile]
+    func fetchRemote(from source: RemoteAudioSource) -> [RemoteAudioFile]
 }

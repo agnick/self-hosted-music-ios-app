@@ -1,9 +1,4 @@
-//
-//  PlayerProtocols.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 19.02.2025.
-//
+import UIKit
 
 protocol PlayerBusinessLogic {
     func loadStart()
@@ -14,12 +9,22 @@ protocol PlayerBusinessLogic {
     func rewindTrack(_ request: PlayerModel.Rewind.Request)
     func loadPlayPauseState()
     func loadRepeatState()
+    func loadAudioOptions()
 }
 
 protocol PlayerPresentationLogic {
     func presentStart(_ response: PlayerModel.Start.Response)
     func presentPlayPauseState(_ response: PlayerModel.PlayPause.Response)
     func presentRepeatState(_ response: PlayerModel.Repeat.Response)
+    func presentAudioOptions(_ response: PlayerModel.AudioOptions.Response)
+    func presentPlaylistsList(_ response: PlayerModel.Playlists.Response)
+    func presentError(_ response: PlayerModel.Error.Response)
     
-    func routeTo()
+    func routeTo(vc: UIViewController)
+}
+
+protocol PlayerWorkerProtocol {
+    func saveToPlaylist(_ audioFile: AudioFile, to playlist: PlaylistEntity) throws
+    func getAllPlaylists() -> [PlaylistEntity]
+    func deleteDownloadedAudioFile(_ audioFile: DownloadedAudioFile) throws
 }

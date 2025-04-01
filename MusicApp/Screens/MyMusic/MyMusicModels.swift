@@ -1,16 +1,9 @@
-//
-//  MyMusicModels.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 17.01.2025.
-//
+import UIKit
 
 enum MyMusicModel {
     enum Start {
-        struct Request {}
-        
         struct Response {
-            let cloudService: CloudServiceType?
+            let cloudService: RemoteAudioSource?
         }
         
         struct ViewModel {
@@ -19,7 +12,9 @@ enum MyMusicModel {
     }
     
     enum FetchedFiles {
-        struct Request {}
+        struct Request {
+            let source: RemoteAudioSource?
+        }
         
         struct Response {
             let audioFiles: [AudioFile]?
@@ -35,35 +30,17 @@ enum MyMusicModel {
         struct Request {
             let sortType: SortType
         }
-        
-        struct Response {
-        }
-        
-        struct ViewModel {
-        }
     }
     
     enum Search {
         struct Request {
             let query: String
         }
-        
-        struct Response {
-        }
-        
-        struct ViewModel {
-        }
     }
     
     enum Play {
         struct Request {
             let index: Int
-        }
-        
-        struct Response {
-        }
-        
-        struct ViewModel {
         }
     }
     
@@ -78,45 +55,27 @@ enum MyMusicModel {
         struct Request {
             let selectedSegmentIndex: Int
         }
-        
-        struct Response {
-        }
-        
-        struct ViewModel {
-        }
     }
     
     enum DeleteAlert {
-        struct Request {
-        }
-        
         struct Response {
-            let service: CloudServiceType?
+            let service: RemoteAudioSource?
         }
         
         struct ViewModel {
             let alertTitle: String
             let alertMessage: String
-            let service: CloudServiceType?
+            let service: RemoteAudioSource?
         }
     }
     
     enum Delete {
         struct Request {
-            let service: CloudServiceType?
-        }
-        
-        struct Response {
-        }
-        
-        struct ViewModel {
+            let service: RemoteAudioSource?
         }
     }
     
     enum Edit {
-        struct Request {
-        }
-        
         struct Response {
             let isEditingMode: Bool
         }
@@ -127,9 +86,6 @@ enum MyMusicModel {
     }
     
     enum PickTracks {
-        struct Request {
-        }
-        
         struct Response {
             let state: Bool
         }
@@ -141,24 +97,12 @@ enum MyMusicModel {
     }
     
     enum PreLoading {
-        struct Request {
-        }
-        
-        struct Response {
-        }
-        
         struct ViewModel {
             let buttonsState: Bool
         }
     }
     
     enum SortOptions {
-        struct Request {
-        }
-        
-        struct Response {
-        }
-        
         struct ViewModel {
             let sortOptions: [SortOption]
         }
@@ -193,10 +137,6 @@ enum MyMusicModel {
     }
     
     enum NotConnected {
-        struct Request {}
-        
-        struct Response {}
-        
         struct ViewModel {
             let message: String
         }
@@ -214,9 +154,44 @@ enum MyMusicModel {
         }
     }
     
-    enum Error {
-        struct Request {}
+    enum AddToPlaylist {
+        struct Request {
+            let audioFile: AudioFile
+            let playlist: PlaylistEntity
+        }
+    }
+    
+    enum AddSelectedToPlaylist {
+        struct Request {
+            let playlist: PlaylistEntity
+        }
+    }
+    
+    enum PlaylistsOptions {
+        struct Request {
+            let audioFile: AudioFile?
+        }
         
+        struct Response {
+            let playlists: [PlaylistEntity]
+            let audioFile: AudioFile?
+            let isForSelectedTracks: Bool
+        }
+        
+        struct ViewModel {
+            let playlists: [PlaylistEntity]
+            let audioFile: AudioFile?
+            let isForSelectedTracks: Bool
+        }
+    }
+    
+    enum EditAudio {
+        struct Request {
+            let audioFile: AudioFile
+        }
+    }
+    
+    enum Error {        
         struct Response {
             let error: Swift.Error
         }

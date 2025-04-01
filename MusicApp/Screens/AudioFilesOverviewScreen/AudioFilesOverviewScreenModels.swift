@@ -1,18 +1,9 @@
-//
-//  AudioFilesOverviewScreenModels.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 07.01.2025.
-//
-
 import Foundation
 
 enum AudioFilesOverviewScreenModel {    
     enum Start {
-        struct Request {}
-        
         struct Response {
-            let service: CloudServiceType
+            let service: RemoteAudioSource
         }
         
         struct ViewModel {
@@ -21,14 +12,14 @@ enum AudioFilesOverviewScreenModel {
     }
     
     enum FetchedFiles {
-        struct Request {}
-        
         struct Response {
             let audioFiles: [AudioFile]?
+            let isUserInitiated: Bool
         }
         
         struct ViewModel {
             let audioFilesCount: Int
+            let isUserInitiated: Bool
         }
     }
     
@@ -50,8 +41,6 @@ enum AudioFilesOverviewScreenModel {
     }
     
     enum Error {
-        struct Request {}
-        
         struct Response {
             let error: Swift.Error
         }

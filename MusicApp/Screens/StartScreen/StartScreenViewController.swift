@@ -1,10 +1,3 @@
-//
-//  StartScreenViewController.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 24.12.2024.
-//
-
 import UIKit
 
 final class StartScreenViewController: UIViewController {
@@ -45,7 +38,7 @@ final class StartScreenViewController: UIViewController {
         configureUI()
         
         // Calling interactor to switch to the slider guide or main screen.
-        interactor.determineNavigationDestination()
+        interactor.loadMainScreen()
     }
     
     // MARK: - Private methods

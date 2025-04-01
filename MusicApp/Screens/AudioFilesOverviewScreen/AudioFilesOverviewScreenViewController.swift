@@ -1,10 +1,3 @@
-//
-//  AudioFilesOverviewScreenViewController.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 07.01.2025.
-//
-
 import UIKit
 
 final class AudioFilesOverviewScreenViewController: UIViewController {
@@ -22,6 +15,8 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
         static let downloadAllBtnHeight: CGFloat = 45
         static let downloadAllBtnCornerRadius: CGFloat = 10
         static let downloadAllBtnImagePadding: CGFloat = 5
+        static let downloadAllBtnDisabledAlpha: CGFloat = 0.5
+        static let downloadAllBtnEnabledAlpha: CGFloat = 1
         
         // audioFilesTable settings.
         static let audioFilesTableViewTop: CGFloat = 5
@@ -40,7 +35,7 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
     }
     
     // MARK: - Variables
-    private let interactor: AudioFilesOverviewScreenBusinessLogic
+    private let interactor: AudioFilesOverviewScreenBusinessLogic & AudioFilesOverviewScreenDataStore
     
     // UI components
     private let cloudServiceName: UILabel = UILabel()
@@ -53,7 +48,7 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
     private let toastLabel: UILabel = UILabel()
     
     // MARK: - Lifecycle
-    init(interactor: AudioFilesOverviewScreenBusinessLogic) {
+    init(interactor: AudioFilesOverviewScreenBusinessLogic & AudioFilesOverviewScreenDataStore) {
         self.interactor = interactor
         
         super.init(nibName: nil, bundle: nil)
@@ -69,12 +64,9 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
 
         configureUI()
         
-        interactor.loadStart(AudioFilesOverviewScreenModel.Start.Request())
+        interactor.loadStart()
         activityIndicator.startAnimating()
-        interactor
-            .fetchAudioFiles(
-                AudioFilesOverviewScreenModel.FetchedFiles.Request()
-            )
+        interactor.fetchAudioFiles()
     }
     
     // MARK: - Actions
@@ -83,9 +75,13 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
     }
     
     @objc private func downloadAllTapped() {
-        downloadAllBtn.isEnabled = false
-        downloadAllBtn.alpha = 0.5
+        disableDownloadAllBtn()
         interactor.downloadAllAudioFiles()
+    }
+    
+    @objc private func refreshAudioFiles() {
+        disableDownloadAllBtn()
+        interactor.refreshAudioFiles()
     }
     
     // MARK: - Public methods
@@ -95,6 +91,13 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
         activityIndicator.stopAnimating()
         audioFilesTable.reloadData()
         audioFilesCount.text = "Всего треков: \(viewModel.audioFilesCount)"
+        audioFilesTable.refreshControl?.endRefreshing()
+        
+        if viewModel.isUserInitiated {
+            enableDownloadAllBtn()
+        } else {
+            disableDownloadAllBtn()
+        }
     }
     
     func displayStart(
@@ -107,12 +110,13 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
         _ viewModel: AudioFilesOverviewScreenModel.DownloadAudio.ViewModel
     ) {
         audioFilesTable.reloadData()
-        print("Download state for file \(viewModel.fileName) is \(viewModel.isDownloaded)")
     }
     
     func displayError(
         _ viewModel: AudioFilesOverviewScreenModel.Error.ViewModel
     ) {
+        audioFilesTable.refreshControl?.endRefreshing()
+        
         let actions = [UIAlertAction(title: "OK", style: .default)]
         
         self.presentAlert(
@@ -258,6 +262,16 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
         audioFilesTable.contentInset = .zero
         audioFilesTable.contentInsetAdjustmentBehavior = .never
         
+        // Refresh control.
+        let refreshControl = UIRefreshControl()
+        refreshControl.tintColor = UIColor(color: .primary)
+        refreshControl.addTarget(
+            self,
+            action: #selector(refreshAudioFiles),
+            for: .valueChanged
+        )
+        audioFilesTable.refreshControl = refreshControl
+        
         // Set constraints to position the table view.
         audioFilesTable
             .pinTop(
@@ -289,12 +303,23 @@ final class AudioFilesOverviewScreenViewController: UIViewController {
         // Set constraints to position the indicator.
         activityIndicator.pinCenter(to: view)
     }
+    
+    // MARK: - Utility methods
+    private func disableDownloadAllBtn() {
+        downloadAllBtn.isEnabled = false
+        downloadAllBtn.alpha = Constants.downloadAllBtnDisabledAlpha
+    }
+    
+    private func enableDownloadAllBtn() {
+        downloadAllBtn.isEnabled = true
+        downloadAllBtn.alpha = Constants.downloadAllBtnEnabledAlpha
+    }
 }
 
 // MARK: - UITableViewDataSource
 extension AudioFilesOverviewScreenViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return interactor.getAudioFiles().count
+        return interactor.audioFiles.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -303,9 +328,9 @@ extension AudioFilesOverviewScreenViewController: UITableViewDataSource {
             for: indexPath
         ) as! AudioFilesCell
         
-        let audioFile = interactor.getAudioFiles()[indexPath.row]
+        let audioFile = interactor.audioFiles[indexPath.row]
         
-        cell.configure(audioFile.name, audioFile.sizeInMB, downloadState: audioFile.downloadState)
+        cell.configure(audioFile.trackImg, audioFile.name, audioFile.sizeInMB, downloadState: audioFile.downloadState)
         cell.downloadAction = { [weak self] in
             self?.interactor
                 .downloadAudioFiles(
@@ -319,14 +344,7 @@ extension AudioFilesOverviewScreenViewController: UITableViewDataSource {
 }
 
 // MARK: - UITableViewDelegate
-extension AudioFilesOverviewScreenViewController: UITableViewDelegate {
-    func tableView(
-        _ tableView: UITableView,
-        didSelectRowAt indexPath: IndexPath
-    ) {
-        
-    }
-    
+extension AudioFilesOverviewScreenViewController: UITableViewDelegate {    
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return Constants.audioFilesTableRowHeight
     }

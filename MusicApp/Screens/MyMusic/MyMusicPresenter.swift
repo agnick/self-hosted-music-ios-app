@@ -1,18 +1,13 @@
-//
-//  MyMusicPresenter.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 17.01.2025.
-//
-
 import UIKit
 
 final class MyMusicPresenter: MyMusicPresentationLogic {
+    // MARK: - Dependencies
     weak var view: MyMusicViewController?
     
+    // MARK: - Public methods
     func presentStart(_ response: MyMusicModel.Start.Response) {
         DispatchQueue.main.async {
-            let cloudServiceName = response.cloudService?.displayName ?? "Не подключено"
+            let cloudServiceName = response.cloudService?.rawValue ?? "Не подключено"
             
             self.view?
                 .displayStart(
@@ -90,10 +85,16 @@ final class MyMusicPresenter: MyMusicPresentationLogic {
             let alertMessage = "Это действие нельзя будет отменить"
             
             if let cloudService = response.service {
-                self.view?.displayDeleteAlert(MyMusicModel.DeleteAlert.ViewModel(alertTitle: "Вы уверены что хотите удалить выбранные треки из вашего хранилища \(cloudService.displayName)?", alertMessage: alertMessage, service: cloudService))
+                self.view?.displayDeleteAlert(MyMusicModel.DeleteAlert.ViewModel(alertTitle: "Вы уверены что хотите удалить выбранные треки из вашего хранилища \(cloudService.rawValue)?", alertMessage: alertMessage, service: cloudService))
             }
             
             self.view?.displayDeleteAlert(MyMusicModel.DeleteAlert.ViewModel(alertTitle: "Вы уверены что хотите удалить выбранные треки из файлов устройства?", alertMessage: alertMessage, service: nil))
+        }
+    }
+    
+    func presentPlaylistOptions(_ response: MyMusicModel.PlaylistsOptions.Response) {
+        DispatchQueue.main.async {
+            self.view?.displayPlaylistsOptions(MyMusicModel.PlaylistsOptions.ViewModel(playlists: response.playlists, audioFile: response.audioFile, isForSelectedTracks: response.isForSelectedTracks))
         }
     }
     
@@ -109,8 +110,8 @@ final class MyMusicPresenter: MyMusicPresentationLogic {
         }
     }
     
-    func routeTo() {
+    func routeTo(vc: UIViewController) {
         view?.navigationController?
-            .pushViewController(UIViewController(), animated: true)
+            .pushViewController(vc, animated: true)
     }
 }

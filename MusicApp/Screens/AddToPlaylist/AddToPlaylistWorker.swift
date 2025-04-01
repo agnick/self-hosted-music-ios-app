@@ -1,20 +1,51 @@
-//
-//  AddToPlaylistWorker.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 06.03.2025.
-//
-
-import Foundation
+import CoreData
 
 final class AddToPlaylistWorker: AddToPlaylistWorkerProtocol {
-    private let userDefaults = UserDefaults.standard
+    // MARK: - Dependencies
+    private let coreDataManager: CoreDataManager
+    private let userDefaultsManager: UserDefaultsManager
     
+    // MARK: - Lifecycle
+    init(coreDataManager: CoreDataManager, userDefaultsManager: UserDefaultsManager) {
+        self.coreDataManager = coreDataManager
+        self.userDefaultsManager = userDefaultsManager
+    }
+    
+    // MARK: - Public methods
     func loadSortPreference() -> SortType {
-        if let rawValue = userDefaults.string(forKey: UserDefaultsKeys.sortAudiosKey), let savedSort = SortType(rawValue: rawValue) {
-            return savedSort
-        }
+        return userDefaultsManager.loadSortPreference(for: UserDefaultsKeys.sortAudiosKey)
+    }
+    
+    func fetchDownloaded() -> [DownloadedAudioFile] {
+        let context = coreDataManager.context
+        let request: NSFetchRequest<DownloadedAudioFileEntity> = DownloadedAudioFileEntity.fetchRequest()
         
-        return .titleAscending
+        do {
+            let entities = try context.fetch(request)
+            return entities.compactMap { entity in
+                guard entity.id != nil else { return nil }
+                
+                return DownloadedAudioFile(from: entity)
+            }
+        } catch {
+            return []
+        }
+    }
+    
+    func fetchRemote(from source: RemoteAudioSource) -> [RemoteAudioFile] {
+        let context = coreDataManager.context
+        let request: NSFetchRequest<RemoteAudioFileEntity> = RemoteAudioFileEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "sourceRaw == %@", source.rawValue)
+        
+        do {
+            let entities = try context.fetch(request)
+            return entities.compactMap { entity in
+                guard entity.id != nil else { return nil }
+                
+                return RemoteAudioFile(from: entity)
+            }
+        } catch {
+            return []
+        }
     }
 }

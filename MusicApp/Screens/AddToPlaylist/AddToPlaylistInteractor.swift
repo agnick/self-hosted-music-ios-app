@@ -1,48 +1,47 @@
-//
-//  AddToPlaylistInteractor.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 06.03.2025.
-//
+import Foundation
 
 final class AddToPlaylistInteractor: AddToPlaylistBusinessLogic, AddToPlaylistDataStore {
-    // MARK: - Variables
+    // MARK: - Dependencies
     private let presenter: AddToPlaylistPresentationLogic
-    private let localAudioService: LocalAudioService
-    private let userDefaultsManager: UserDefaultsManager
+    private let worker: AddToPlaylistWorkerProtocol
+    private let cloudAuthService: CloudAuthService
     
+    // MARK: - States
+    private var searchQuery: String = ""
+    
+    // MARK: - Stored collections
     var currentAudioFiles: [AudioFile] = []
     var selectedTracks: Set<String> = []
     private var originalAudioFiles: [AudioFile] = []
-    private var searchQuery: String = ""
+    private var remoteFiles: [RemoteAudioFile] = []
+    private var localFiles: [DownloadedAudioFile] = []
+    
     
     // MARK: - Lifecycle
-    init (presenter: AddToPlaylistPresentationLogic, localAudioService: LocalAudioService, userDefaultsManager: UserDefaultsManager) {
+    init (presenter: AddToPlaylistPresentationLogic, worker: AddToPlaylistWorkerProtocol, cloudAuthService: CloudAuthService) {
         self.presenter = presenter
-        self.localAudioService = localAudioService
-        self.userDefaultsManager = userDefaultsManager
+        self.worker = worker
+        self.cloudAuthService = cloudAuthService
     }
     
     // MARK: - Public methods
-    func loadLocalAudioFiles() {
-        Task {
-            presenter.presentPreLoading()
-            
-            do {
-                let audioFiles = try await localAudioService.getSavedAudioFiles()
-                
-                originalAudioFiles = audioFiles
-                currentAudioFiles = audioFiles
-                
-                applySortingAndFiltering()
-            } catch {
-                presenter.presentError(AddToPlaylistModel.Error.Response(error: error))
-            }
+    func loadAudioFiles() {
+        presenter.presentPreLoading()
+        
+        localFiles = worker.fetchDownloaded()
+        
+        if let service = cloudAuthService.currentService {
+            remoteFiles = worker.fetchRemote(from: service)
+        } else {
+            remoteFiles.removeAll()
         }
+        
+        originalAudioFiles = remoteFiles as [AudioFile] + localFiles as [AudioFile]
+        applySortingAndFiltering()
     }
     
     func toggleTrackSelection(_ request: AddToPlaylistModel.TrackSelection.Request) {
-        let audioFile = currentAudioFiles[request.index]
+        let audioFile = request.audioFile
         let isSelected = selectedTracks.contains(audioFile.playbackUrl)
         
         if isSelected {
@@ -51,7 +50,7 @@ final class AddToPlaylistInteractor: AddToPlaylistBusinessLogic, AddToPlaylistDa
             selectedTracks.insert(audioFile.playbackUrl)
         }
         
-        presenter.presentTrackSelection(AddToPlaylistModel.TrackSelection.Response(index: request.index, selectedAudioFiles: selectedTracks))
+        presenter.presentTrackSelection(AddToPlaylistModel.TrackSelection.Response(indexPath: request.indexPath, selectedAudioFiles: selectedTracks))
     }
     
     func pickAll() {
@@ -83,7 +82,7 @@ final class AddToPlaylistInteractor: AddToPlaylistBusinessLogic, AddToPlaylistDa
     
     // MARK: - Private methods
     private func applySortingAndFiltering() {
-        let sortType = userDefaultsManager.loadSortPreference(for: UserDefaultsKeys.sortAudiosKey)
+        let sortType = worker.loadSortPreference()
         
         currentAudioFiles = originalAudioFiles
         
@@ -104,11 +103,23 @@ final class AddToPlaylistInteractor: AddToPlaylistBusinessLogic, AddToPlaylistDa
         case .titleDescending:
             currentAudioFiles.sort { $0.name > $1.name }
         case .durationAscending:
-            currentAudioFiles.sort { $0.durationInSeconds ?? 0 < $1.durationInSeconds ?? 0}
+            currentAudioFiles.sort { $0.durationInSeconds < $1.durationInSeconds}
         case .durationDescending:
-            currentAudioFiles.sort { $0.durationInSeconds ?? 0 > $1.durationInSeconds ?? 0}
+            currentAudioFiles.sort { $0.durationInSeconds > $1.durationInSeconds}
         }
 
-        presenter.presentLocalAudioFiles(AddToPlaylistModel.LocalAudioFiles.Response(audioFiles: currentAudioFiles, selectedAudioFiles: selectedTracks))
+        presenter.presentAudioFiles(AddToPlaylistModel.AudioFiles.Response(audioFiles: currentAudioFiles, selectedAudioFiles: selectedTracks))
+    }
+    
+    private func flatIndex(for indexPath: IndexPath) -> Int {
+        switch indexPath.section {
+        case 0:
+            return indexPath.row
+        case 1:
+            let cloudCount = currentAudioFiles.filter { $0 is RemoteAudioFile }.count
+            return cloudCount + indexPath.row
+        default:
+            return 0
+        }
     }
 }

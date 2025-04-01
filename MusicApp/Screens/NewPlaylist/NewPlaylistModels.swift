@@ -1,10 +1,3 @@
-//
-//  NewPlaylist.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 04.03.2025.
-//
-
 import UIKit
 
 enum NewPlaylistModel {
@@ -22,7 +15,9 @@ enum NewPlaylistModel {
             let index: Int
             let name: String
             let artistName: String
+            let image: UIImage
             let durationInSeconds: Double?
+            let source: RemoteAudioSource?
         }
     }
     
@@ -64,6 +59,12 @@ enum NewPlaylistModel {
         }
     }
     
+    enum HardSetImage {
+        struct Request {
+            let image: UIImage?
+        }
+    }
+    
     enum Error {
         struct Response {
             let error: Swift.Error
@@ -73,4 +74,23 @@ enum NewPlaylistModel {
             let errorDescription: String
         }
     }
+}
+
+enum NewPlaylistError: LocalizedError {
+    case duplicateName
+    case saveFailed(Error)
+
+    var errorDescription: String? {
+        switch self {
+        case .duplicateName:
+            return "Плейлист с таким названием уже существует"
+        case .saveFailed(let error):
+            return "Не удалось сохранить данные: \(error.localizedDescription)"
+        }
+    }
+}
+
+enum PlaylistEditingMode {
+    case create
+    case edit(Playlist)
 }

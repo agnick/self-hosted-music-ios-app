@@ -1,84 +1,74 @@
-//
-//  MyMusicInteractor.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 17.01.2025.
-//
-
 import Foundation
 
 final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
+    // MARK: - Dependencies
     private let presenter: MyMusicPresentationLogic
+    private let worker: MyMusicWorkerProtocol
     private let cloudAuthService: CloudAuthService
-    private let cloudAudioService: CloudAudioService
-    private let localAudioService: LocalAudioService
+    private let cloudDataService: CloudDataService
     private let audioPlayerService: AudioPlayerService
     private let userDefaultsManager: UserDefaultsManager
+    private let coreDataManager: CoreDataManager
     
+    // MARK: - States
     private var searchQuery: String = ""
     private var isEditing = false
     private var originalAudioFiles: [AudioFile] = []
     private var currentFetchTask: Task<Void, Never>?
-    private var cloudAudioFiles: [AudioFile]? = nil
-    private var localAudioFiles: [AudioFile]? = nil
-    
-    var currentService: CloudServiceType? = nil
     var isEditingModeEnabled: Bool {
         return isEditing
     }
     var currentAudioFiles: [AudioFile] = []
     var selectedTracks: Set<String> = []
+    var currentService: RemoteAudioSource?
     
-    init (presenter: MyMusicPresentationLogic, cloudAuthService: CloudAuthService, cloudAudioService: CloudAudioService, localAudioService: LocalAudioService, audioPlayerService: AudioPlayerService, userDefaultsManager: UserDefaultsManager) {
+    // MARK: - Lifecycle
+    init (presenter: MyMusicPresentationLogic, worker: MyMusicWorkerProtocol, cloudAuthService: CloudAuthService, cloudDataService: CloudDataService, audioPlayerService: AudioPlayerService, userDefaultsManager: UserDefaultsManager, coreDataManager: CoreDataManager) {
         self.presenter = presenter
+        self.worker = worker
         self.cloudAuthService = cloudAuthService
-        self.cloudAudioService = cloudAudioService
-        self.localAudioService = localAudioService
+        self.cloudDataService = cloudDataService
         self.audioPlayerService = audioPlayerService
         self.userDefaultsManager = userDefaultsManager
+        self.coreDataManager = coreDataManager
     }
     
-    func loadStart(_ request: MyMusicModel.Start.Request) {
-        let cloudService = cloudAuthService.getAuthorizedService()
-        currentService = cloudService
-        
-        presenter.presentStart(MyMusicModel.Start.Response(cloudService: cloudService))
+    // MARK: - Public methods
+    func loadStart() {
+        currentService = cloudAuthService.currentService
+        presenter.presentStart(MyMusicModel.Start.Response(cloudService: currentService))
     }
     
     func updateAudioFiles(_ request: MyMusicModel.UpdateAudio.Request) {
         currentFetchTask?.cancel()
         
-        let segmentIndex = request.selectedSegmentIndex
+        if request.selectedSegmentIndex == 0, cloudAuthService.currentService == nil {
+            originalAudioFiles.removeAll()
+            currentAudioFiles.removeAll()
+            selectedTracks.removeAll()
+            
+            presenter.presentAudioFiles(MyMusicModel.FetchedFiles.Response(audioFiles: []))
+            
+            presenter.presentNotConnectedMessage()
+            
+            return
+        }
         
+        let segmentIndex = request.selectedSegmentIndex
         switch segmentIndex {
         case 0:
-            if let _ = cloudAuthService.getAuthorizedService() {
-                if let cachedCloudFiles = cloudAudioFiles, !request.isRefresh {
-                    originalAudioFiles = cachedCloudFiles
-                    applySortingAndFiltering()
-                    presenter.presentAudioFiles(MyMusicModel.FetchedFiles.Response(audioFiles: currentAudioFiles))
-                } else {
-                    currentAudioFiles = []
-                    presenter.presentPreLoading()
-                    currentFetchTask = Task {
-                        await fetchCloudAudioFiles(MyMusicModel.FetchedFiles.Request())
-                    }
-                }
-            } else {
-                currentAudioFiles = []
-                presenter.presentNotConnectedMessage()
-            }
-        case 1:
-            if let cachedLocalFiles = localAudioFiles, !request.isRefresh {
-                originalAudioFiles = cachedLocalFiles
-                applySortingAndFiltering()
-                presenter.presentAudioFiles(MyMusicModel.FetchedFiles.Response(audioFiles: currentAudioFiles))
-            } else {
+            if let service = cloudAuthService.currentService {
                 currentAudioFiles = []
                 presenter.presentPreLoading()
                 currentFetchTask = Task {
-                    await fetchLocalAudioFiles(MyMusicModel.FetchedFiles.Request())
+                    await fetchCloudAudioFiles(service, forceRefresh: request.isRefresh)
                 }
+            }
+        case 1:
+            currentAudioFiles = []
+            presenter.presentPreLoading()
+            currentFetchTask = Task {
+                await fetchLocalAudioFiles()
             }
         default:
             currentAudioFiles = []
@@ -95,13 +85,12 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
         applySortingAndFiltering()
     }
     
-    // delete
     func handleDeleteSelectedTracks(_ request: MyMusicModel.HandleDelete.Request) {
         let selectedSegment = request.selectedSegmentIndex
         
         switch selectedSegment {
         case 0:
-            presenter.presentDeleteAlert(MyMusicModel.DeleteAlert.Response(service: cloudAuthService.getAuthorizedService()))
+            presenter.presentDeleteAlert(MyMusicModel.DeleteAlert.Response(service: cloudAuthService.currentService))
         case 1:
             presenter.presentDeleteAlert(MyMusicModel.DeleteAlert.Response(service: nil))
         default:
@@ -112,39 +101,39 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
     func deleteSelectedTracks(_ request: MyMusicModel.Delete.Request) {
         Task {
             do {
-                for audioFile in currentAudioFiles {
-                    if selectedTracks.contains(uniqueTrackID(for: audioFile)) {
-                        if let cloudService = request.service {
-                            try await cloudAudioService.deleteAudioFile(for: cloudService, from: audioFile.downloadPath)
-                        } else {
-                            try localAudioService.deleteAudioFile(filePath: audioFile.downloadPath)
-                        }
+                for audioFile in currentAudioFiles where selectedTracks.contains(audioFile.id.uuidString) {
+                    if let remote = audioFile as? RemoteAudioFile {
+                        try await cloudDataService.delete(remote)
+                    } else if let local = audioFile as? DownloadedAudioFile {
+                        try worker.deleteDownloadedAudioFile(local)
+                    }
+                    
+                    await MainActor.run {
+                        audioPlayerService.removeTrackFromPlaylist(audioFile)
                     }
                 }
                 
-                if let _ = request.service {
-                    await fetchCloudAudioFiles(MyMusicModel.FetchedFiles.Request())
+                if let service = request.service {
+                    await fetchCloudAudioFiles(service)
                 } else {
-                    await fetchLocalAudioFiles(MyMusicModel.FetchedFiles.Request())
+                    await fetchLocalAudioFiles()
                 }
             } catch {
-                print(error)
+                await MainActor.run {
+                    presenter.presentError(MyMusicModel.Error.Response(error: error))
+                }
             }
         }
     }
     
-    // edit
-    func loadEdit(_ request: MyMusicModel.Edit.Request) {
+    func loadEdit() {
         isEditing.toggle()
-        
-        // Clear the set of selected tracks when entering or exiting editing mode.
         selectedTracks.removeAll()
         
         presenter.presentEdit(MyMusicModel.Edit.Response(isEditingMode: isEditing))
     }
     
-    // pick all tracks
-    func pickAll(_ request: MyMusicModel.PickTracks.Request) {
+    func pickAll() {
         let allSelected = selectedTracks.count == currentAudioFiles.count
         
         if allSelected {
@@ -184,7 +173,6 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
     func playSelectedTrack(_ request: MyMusicModel.Play.Request) {
         if (!isEditing) {
             let selectedTrack = currentAudioFiles[request.index]
-            
             audioPlayerService.play(audioFile: selectedTrack, playlist: currentAudioFiles)
         }
     }
@@ -207,26 +195,15 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
         presenter.presentTrackSelection(MyMusicModel.TrackSelection.Response(index: request.index, selectedCount: selectedTracks.count))
     }
     
-    func resetCloudCache() {
-        cloudAudioFiles = nil
-        currentAudioFiles = []
-    }
-    
     func downloadTrack(_ request: MyMusicModel.Download.Request) {
         Task {
             do {
-                let audioFile = request.audioFile
-                
-                if let service = currentService {
-                    let success = try await cloudAudioService.downloadAudioFile(for: service, from: audioFile.downloadPath, fileName: audioFile.name)
-                    if success {
-                        print("Трек успешно загружен: \(audioFile.name)")
-                    } else {
-                        print("Не удалось загрузить трек: \(audioFile.name)")
-                    }
+                guard let remote = request.audioFile as? RemoteAudioFile else {
+                    return
                 }
+                
+                _ = try await cloudDataService.download(remote)
             } catch {
-                print("Ошибка при загрузке трека: \(error)")
                 await MainActor.run {
                     presenter.presentError(MyMusicModel.Error.Response(error: error))
                 }
@@ -238,15 +215,19 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
         Task {
             do {
                 let audioFile = request.audioFile
-                if audioFile.source == .local {
-                    try localAudioService.deleteAudioFile(filePath: audioFile.downloadPath)
-                    await fetchLocalAudioFiles(MyMusicModel.FetchedFiles.Request())
-                } else if let service = currentService {
-                    try await cloudAudioService.deleteAudioFile(for: service, from: audioFile.downloadPath)
-                    await fetchCloudAudioFiles(MyMusicModel.FetchedFiles.Request())
+                
+                if let remote = audioFile as? RemoteAudioFile {
+                    try await cloudDataService.delete(remote)
+                    await fetchCloudAudioFiles(remote.source)
+                } else if let local = audioFile as? DownloadedAudioFile {
+                    try worker.deleteDownloadedAudioFile(local)
+                    await fetchLocalAudioFiles()
+                }
+                
+                await MainActor.run {
+                    audioPlayerService.removeTrackFromPlaylist(audioFile)
                 }
             } catch {
-                print("Ошибка при удалении трека: \(error)")
                 await MainActor.run {
                     presenter.presentError(MyMusicModel.Error.Response(error: error))
                 }
@@ -254,74 +235,83 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
         }
     }
     
-    // MARK: - Private methods
-    private func fetchCloudAudioFiles(_ request: MyMusicModel.FetchedFiles.Request) async {
-        guard
-            !Task.isCancelled
-        else {
-            return
-        }
+    func loadPlaylistOptions(_ request: MyMusicModel.PlaylistsOptions.Request) {
+        let playlists = worker.getAllPlaylists()
         
-        guard
-            let service = cloudAuthService.getAuthorizedService()
-        else {
-            await MainActor.run {
-                presenter.presentNotConnectedMessage()
-            }
-            
-            return
-        }
+        presenter.presentPlaylistOptions(MyMusicModel.PlaylistsOptions.Response(playlists: playlists, audioFile: request.audioFile, isForSelectedTracks: false))
+    }
+    
+    func loadPlaylistOptionsForSelectedTracks() {
+        let playlists = worker.getAllPlaylists()
         
+        presenter.presentPlaylistOptions(MyMusicModel.PlaylistsOptions.Response(playlists: playlists, audioFile: nil, isForSelectedTracks: false))
+    }
+    
+    func addToPlaylist(_ request: MyMusicModel.AddToPlaylist.Request) {
         do {
-            let audioFiles = try await cloudAudioService.fetchAudioFiles(for: service, forceRefresh: true)
-            
-            guard
-                !Task.isCancelled
-            else {
-                return
-            }
-            
-            cloudAudioFiles = audioFiles
-            originalAudioFiles = audioFiles
-            applySortingAndFiltering()
-            
-            await MainActor.run {
-                presenter.presentAudioFiles(MyMusicModel.FetchedFiles.Response(audioFiles: audioFiles))
-            }
+            try worker.saveToPlaylist(request.audioFile, to: request.playlist)
         } catch {
-            await MainActor.run {
+            presenter.presentError(MyMusicModel.Error.Response(error: error))
+        }
+    }
+    
+    func addSelectedTracksToPlaylist(_ request: MyMusicModel.AddSelectedToPlaylist.Request) {
+        let selected = currentAudioFiles.filter { selectedTracks.contains($0.id.uuidString) }
+        
+        for file in selected {
+            do {
+                try worker.saveToPlaylist(file, to: request.playlist)
+            } catch {
                 presenter.presentError(MyMusicModel.Error.Response(error: error))
             }
         }
     }
     
-    private func fetchLocalAudioFiles(_ request: MyMusicModel.FetchedFiles.Request) async {
-        guard
-            !Task.isCancelled
-        else {
-            return
-        }
+    func loadEditAudioScreen(_ request: MyMusicModel.EditAudio.Request) {
+        let editVC = EditAudioAssembly.build(audioFile: request.audioFile, coreDataManager: coreDataManager)
         
-        do {
-            let audioFiles = try await localAudioService.getSavedAudioFiles()
-            
-            guard
-                !Task.isCancelled
-            else {
+        presenter.routeTo(vc: editVC)
+    }
+    
+    // MARK: - Private methods
+    private func fetchCloudAudioFiles(_ source: RemoteAudioSource, forceRefresh: Bool = false) async {
+        guard !Task.isCancelled else { return }
+        
+        if forceRefresh {
+            do {
+                let fresh = try await cloudDataService.fetchFiles()
+                originalAudioFiles = fresh
+                applySortingAndFiltering()
+                
+                await MainActor.run {
+                    presenter.presentAudioFiles(MyMusicModel.FetchedFiles.Response(audioFiles: fresh))
+                }
+            } catch {
+                await MainActor.run {
+                    presenter.presentError(MyMusicModel.Error.Response(error: error))
+                }
                 return
             }
-            
-            localAudioFiles = audioFiles
-            originalAudioFiles = audioFiles
-            applySortingAndFiltering()
-            
-            await MainActor.run {
-                presenter.presentAudioFiles(MyMusicModel.FetchedFiles.Response(audioFiles: audioFiles))
-            }
-        } catch {
-            await MainActor.run {
-                presenter.presentError(MyMusicModel.Error.Response(error: error))
-            }
+        }
+        
+        let cached = worker.fetchRemoteAudioFiles(from: source)
+        originalAudioFiles = cached
+        applySortingAndFiltering()
+        
+        await MainActor.run {
+            presenter.presentAudioFiles(MyMusicModel.FetchedFiles.Response(audioFiles: cached))
+        }
+    }
+    
+    private func fetchLocalAudioFiles() async {
+        guard !Task.isCancelled else { return }
+        
+        let cached = worker.fetchDownloadedAudioFiles()
+        originalAudioFiles = cached
+        applySortingAndFiltering()
+        
+        await MainActor.run {
+            presenter.presentAudioFiles(MyMusicModel.FetchedFiles.Response(audioFiles: cached))
         }
     }
     
@@ -353,15 +343,15 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
         case .titleDescending:
             currentAudioFiles.sort { $0.name > $1.name }
         case .durationAscending:
-            currentAudioFiles.sort { $0.durationInSeconds ?? 0 < $1.durationInSeconds ?? 0}
+            currentAudioFiles.sort { $0.durationInSeconds < $1.durationInSeconds}
         case .durationDescending:
-            currentAudioFiles.sort { $0.durationInSeconds ?? 0 > $1.durationInSeconds ?? 0}
+            currentAudioFiles.sort { $0.durationInSeconds > $1.durationInSeconds}
         }
 
         presenter.presentAudioFiles(MyMusicModel.FetchedFiles.Response(audioFiles: currentAudioFiles))
     }
     
     private func uniqueTrackID(for audioFile: AudioFile) -> String {
-        return "\(audioFile.source.rawValue)-\(audioFile.playbackUrl)"
+        return audioFile.id.uuidString
     }
 }

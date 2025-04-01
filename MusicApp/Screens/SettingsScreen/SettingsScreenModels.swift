@@ -1,28 +1,31 @@
-//
-//  SettingsScreenModels.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 12.01.2025.
-//
+import UIKit
 
 enum SettingsScreenModel {
     enum Start {
-        struct Request {}
-        
         struct Response {
-            let cloudService: CloudServiceType?
+            let cloudService: RemoteAudioSource?
+            let appVersion: String
+            let freeMemoryGB: String
+            let usedMemoryGB: String
         }
         
         struct ViewModel {
             let cloudServiceName: String
+            let cloudServiceImage: UIImage?
+            let appVersion: String
+            let freeMemoryGB: String
+            let usedMemoryGB: String
+            let isCloudServiceConnected: Bool
         }
     }
     
-    enum Logout {
-        struct Request {}
+    enum Error {
+        struct Response {
+            let error: Swift.Error
+        }
         
-        struct Response {}
-        
-        struct ViewModel {}
+        struct ViewModel {
+            let errorDescription: String
+        }
     }
 }

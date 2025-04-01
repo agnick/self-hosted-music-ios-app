@@ -1,18 +1,19 @@
-//
-//  NewPlaylistPresenter.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 04.03.2025.
-//
-
 import UIKit
 
 final class NewPlaylistPresenter: NewPlaylistPresentationLogic {
+    // MARK: - Dependencies
     weak var view: NewPlaylistViewController?
     
+    // MARK: - Public methods
     func presentCellData(_ response: NewPlaylistModel.CellData.Response) {
         DispatchQueue.main.async {
-            let viewModel = NewPlaylistModel.CellData.ViewModel(index: response.index, name: response.audioFile.name, artistName: response.audioFile.artistName, durationInSeconds: response.audioFile.durationInSeconds)
+            var source: RemoteAudioSource? = nil
+            
+            if let remote = response.audioFile as? RemoteAudioFile {
+                source = remote.source
+            }
+            
+            let viewModel = NewPlaylistModel.CellData.ViewModel(index: response.index, name: response.audioFile.name, artistName: response.audioFile.artistName, image: response.audioFile.trackImg, durationInSeconds: response.audioFile.durationInSeconds, source: source)
             
             self.view?.displayCellData(viewModel)
         }
@@ -38,8 +39,13 @@ final class NewPlaylistPresenter: NewPlaylistPresentationLogic {
     
     func presentError(_ response: NewPlaylistModel.Error.Response) {
         DispatchQueue.main.async {
-            print("Error: \(response.error.localizedDescription)")
             self.view?.displayError(NewPlaylistModel.Error.ViewModel(errorDescription: response.error.localizedDescription))
+        }
+    }
+    
+    func presentPlaylistSavedSuccessfully() {
+        DispatchQueue.main.async {
+            self.view?.navigationController?.popViewController(animated: true)
         }
     }
     

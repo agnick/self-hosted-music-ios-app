@@ -1,20 +1,7 @@
-//
-//  StartScreenProtocols.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 24.12.2024.
-//
-
 protocol StartScreenBusinessLogic {
-    func determineNavigationDestination()
-}
-
-protocol StartScreenWorkerLogic {
-    func isFirstLaunch() -> Bool
-    func markOnboardingCompleted()
+    func loadMainScreen()
 }
 
 protocol StartScreenPresentationLogic {
-    func routeToMainImportScreen()
-    func routeToSliderGuideScreen()
+    func presentMainScreen(_ response: StartScreenModel.MainScreen.Response)
 }

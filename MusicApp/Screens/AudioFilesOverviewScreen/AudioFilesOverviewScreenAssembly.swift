@@ -1,18 +1,10 @@
-//
-//  AudioFilesOverviewScreenAssembly.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 07.01.2025.
-//
-
 import UIKit
 
 enum AudioFilesOverviewScreenAssembly {
-    static func build(service: CloudServiceType) -> UIViewController {
+    static func build(cloudDataService: CloudDataService, coreDataManager: CoreDataManager, service: RemoteAudioSource) -> UIViewController {
         let presenter = AudioFilesOverviewScreenPresenter()
-        let cloudAuthService = CloudAuthService()
-        let cloudAudioService = CloudAudioService(cloudAuthService: cloudAuthService)
-        let interactor = AudioFilesOverviewScreenInteractor(presenter: presenter, cloudAudioService: cloudAudioService, service: service)
+        let worker = AudioFilesOverviewScreenWorker(coreDataManager: coreDataManager)
+        let interactor = AudioFilesOverviewScreenInteractor(presenter: presenter, worker: worker, cloudDataService: cloudDataService, service: service)
         let view = AudioFilesOverviewScreenViewController(interactor: interactor)
         presenter.view = view
         

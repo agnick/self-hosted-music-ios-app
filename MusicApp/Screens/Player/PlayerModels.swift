@@ -1,10 +1,3 @@
-//
-//  PlayerModels.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 19.02.2025.
-//
-
 import UIKit
 import CoreMedia
 
@@ -18,6 +11,7 @@ enum PlayerModel {
         struct ViewModel {
             let trackName: String
             let artistName: String
+            let trackImage: UIImage
             let trackDuration: Double?
             let currentTime: Double
         }
@@ -46,6 +40,46 @@ enum PlayerModel {
     enum Rewind {
         struct Request {
             let sliderValue: Float
+        }
+    }
+    
+    enum AudioOptions {
+        struct Request {
+            let delegate: EditAudioViewControllerDelegate
+        }
+        
+        struct Response {
+            let audioFile: AudioFile
+            let onEdit: () -> Void
+            let onAddToPlaylist: () -> Void
+            let onDelete: () -> Void
+            let onDownload: (() -> Void)?
+        }
+        
+        struct ViewModel {
+            let alert: UIAlertController
+        }
+    }
+    
+    enum Playlists {
+        struct Response {
+            let audioFile: AudioFile
+            let playlists: [PlaylistEntity]
+            let onSelect: (AudioFile, PlaylistEntity) -> Void
+        }
+        
+        struct ViewModel {
+            let alert: UIAlertController
+        }
+    }
+    
+    enum Error {        
+        struct Response {
+            let error: Swift.Error
+        }
+        
+        struct ViewModel {
+            let errorDescription: String
         }
     }
 }

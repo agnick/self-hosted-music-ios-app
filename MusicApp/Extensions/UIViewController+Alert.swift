@@ -1,10 +1,3 @@
-//
-//  UIViewController+Alert.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 14.01.2025.
-//
-
 import UIKit
 
 extension UIViewController {

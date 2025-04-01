@@ -1,10 +1,3 @@
-//
-//  MyMusicViewFactory.swift
-//  MusicApp
-//
-//  Created by Никита Агафонов on 18.01.2025.
-//
-
 import UIKit
 
 final class MyMusicViewFactory {
