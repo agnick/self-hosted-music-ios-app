@@ -12,7 +12,6 @@ protocol PlayerBusinessLogic {
     func playPause()
     func playNextTrack()
     func rewindTrack(_ request: PlayerModel.Rewind.Request)
-    
     func loadPlayPauseState()
     func loadRepeatState()
 }

@@ -6,17 +6,21 @@
 //
 
 import Foundation
+import UIKit
 
 final class NewPlaylistInteractor: NewPlaylistBusinessLogic, NewPlaylistDataStore {
     // MARK: - Variables
     private let presenter: NewPlaylistPresentationLogic
+    private let worker: NewPlaylistWorkerProtocol
+    
     var selectedTracks: [AudioFile] = []
-    private var playlistImageData: Any?
+    private var playlistImage: UIImage?
     private var playlistName: String?
     
     // MARK: - Lifecycle
-    init (presenter: NewPlaylistPresentationLogic) {
+    init (presenter: NewPlaylistPresentationLogic, worker: NewPlaylistWorkerProtocol) {
         self.presenter = presenter
+        self.worker = worker
     }
     
     // MARK: - Public methods
@@ -37,13 +41,18 @@ final class NewPlaylistInteractor: NewPlaylistBusinessLogic, NewPlaylistDataStor
     }
     
     func loadPickedPlaylistImage(_ request: NewPlaylistModel.PlaylistImage.Request) {
-        if let imageData = request.imageData {
+        if let imageData = request.imageData as? UIImage {
             presenter.presentPickedPlaylistImage(NewPlaylistModel.PlaylistImage.Response(imageData: imageData))
-            playlistImageData = imageData
+            playlistImage = imageData
         } else {
-            let error = NSError(domain: "NewPlaylistInteractor", code: 1001, userInfo: [NSLocalizedDescriptionKey: "Ошибка загрузки изображения"])
+            let error = NSError(
+                domain: "NewPlaylistInteractor",
+                code: 1001,
+                userInfo: [NSLocalizedDescriptionKey: "Ошибка загрузки изображения"]
+            )
+            
             presenter.presentError(NewPlaylistModel.Error.Response(error: error))
-            playlistImageData = nil
+            playlistImage = nil
         }
     }
     
@@ -80,6 +89,7 @@ final class NewPlaylistInteractor: NewPlaylistBusinessLogic, NewPlaylistDataStor
     }
     
     func savePlaylist() {
-        print("Name: \(playlistName ?? "nil"), Image: \(playlistImageData ?? "nil"), TracksList: \(selectedTracks)")
+        let playlist = Playlist(image: playlistImage, title: playlistName, audios: selectedTracks)
+        worker.savePlaylistToCoreData(playlist: playlist)
     }
 }

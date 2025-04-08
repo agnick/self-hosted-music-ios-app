@@ -72,10 +72,14 @@ final class PlaylistsViewController: UIViewController {
         configureUI()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        interactor.fetchAllPlaylists()
+    }
+    
     // MARK: - Tab bar actions
     @objc private func sortButtonTapped() {
         // Showing sort action sheet.
-        
+        interactor.loadSortOptions()
     }
 
     @objc private func editButtonTapped() {
@@ -87,6 +91,32 @@ final class PlaylistsViewController: UIViewController {
         interactor.createPlaylist()
     }
     
+    // MARK: - Public methods
+    func displayAllPlaylists() {
+        playlistsTable.reloadData()
+    }
+    
+    func displaySortOptions(_ viewModel: PlaylistsModel.SortOptions.ViewModel) {
+        let alert = UIAlertController(title: "Выберите тип сортировки", message: nil, preferredStyle: .actionSheet)
+        
+        let titleAttributes = [NSAttributedString.Key.foregroundColor: UIColor(color: .primary)]
+        let attributedTitle = NSAttributedString(string: "Выберите тип сортировки", attributes: titleAttributes)
+        alert.setValue(attributedTitle, forKey: "attributedTitle")
+        
+        for option in viewModel.sortOptions {
+            let action = UIAlertAction(title: option.title, style: option.isCancel ? .cancel : .default) { _ in
+                if let request = option.request {
+                    self.interactor.sortPlaylists(request)
+                }
+            }
+            
+            action.setValue(UIColor(color: .primary), forKey: "titleTextColor")
+            alert.addAction(action)
+        }
+        
+        present(alert, animated: true)
+    }
+    
     // MARK: - Private methods for UI configuring
     private func configureUI() {
         view.backgroundColor = UIColor(color: .background)
@@ -95,6 +125,7 @@ final class PlaylistsViewController: UIViewController {
         configureTitleLabel()
         configureSearchBar()
         configureCreateNewPlaylistButton()
+        configurePlaylistsTable()
     }
     
     private func configureNavigationBar() {
@@ -194,8 +225,8 @@ final class PlaylistsViewController: UIViewController {
         // Register the cell class for reuse.
         playlistsTable
             .register(
-                FetchedAudioCell.self,
-                forCellReuseIdentifier: FetchedAudioCell.reuseId
+                PlaylistCell.self,
+                forCellReuseIdentifier: PlaylistCell.reuseId
             )
         
         playlistsTable.isScrollEnabled = true
@@ -228,13 +259,13 @@ final class PlaylistsViewController: UIViewController {
 // MARK: - UISearchBarDelegate
 extension PlaylistsViewController: UISearchBarDelegate {
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        
+        interactor.searchPlaylists(PlaylistsModel.Search.Request(query: searchText))
     }
     
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
         searchBar.text = ""
         searchBar.resignFirstResponder()
-        
+        interactor.searchPlaylists(PlaylistsModel.Search.Request(query: ""))
     }
 }
 
@@ -250,6 +281,9 @@ extension PlaylistsViewController: UITableViewDataSource {
             for: indexPath
         ) as! PlaylistCell
         cell.delegate = self
+        
+        let playlist = interactor.playlists[indexPath.row]
+        cell.configure(playlist.image, playlist.title)
         
         return cell
     }
@@ -276,9 +310,6 @@ extension PlaylistsViewController: UITableViewDelegate {
 // MARK: - FetchedAudioCellDelegate
 extension PlaylistsViewController: PlaylistCellDelegate {
     func didTapCheckBox(in cell: PlaylistCell) {
-        guard let indexPath = playlistsTable.indexPath(for: cell) else { return }
-        
-        
         
     }
 }

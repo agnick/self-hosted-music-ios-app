@@ -12,12 +12,14 @@ enum PlayerModel {
     enum Start {
         struct Response {
             let currentTrack: AudioFile
+            let currentTime: Double
         }
         
         struct ViewModel {
             let trackName: String
             let artistName: String
             let trackDuration: Double?
+            let currentTime: Double
         }
     }
     

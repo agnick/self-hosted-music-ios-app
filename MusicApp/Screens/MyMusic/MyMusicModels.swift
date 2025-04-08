@@ -70,12 +70,7 @@ enum MyMusicModel {
     enum UpdateAudio {
         struct Request {
             let selectedSegmentIndex: Int
-        }
-        
-        struct Response {
-        }
-        
-        struct ViewModel {
+            let isRefresh: Bool
         }
     }
     
@@ -181,28 +176,6 @@ enum MyMusicModel {
         }
     }
     
-    enum CellData {
-        struct Request {
-            let index: Int
-        }
-        
-        struct Response {
-            let index: Int
-            let isEditingMode: Bool
-            let isSelected: Bool
-            let audioFile: AudioFile
-        }
-        
-        struct ViewModel {
-            let index: Int
-            let isEditingMode: Bool
-            let isSelected: Bool
-            let name: String
-            let artistName: String
-            let durationInSeconds: Double?
-        }
-    }
-    
     enum TrackSelection {
         struct Request {
             let index: Int
@@ -226,6 +199,18 @@ enum MyMusicModel {
         
         struct ViewModel {
             let message: String
+        }
+    }
+    
+    enum Download {
+        struct Request {
+            let audioFile: AudioFile
+        }
+    }
+    
+    enum DeleteTrack {
+        struct Request {
+            let audioFile: AudioFile
         }
     }
     

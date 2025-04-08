@@ -6,7 +6,6 @@
 //
 
 protocol AddToPlaylistBusinessLogic {
-    func getCellData(_ request: AddToPlaylistModel.CellData.Request)
     func toggleTrackSelection(_ request: AddToPlaylistModel.TrackSelection.Request)
     func searchAudioFiles(_ request: AddToPlaylistModel.Search.Request)
     func loadLocalAudioFiles()
@@ -22,7 +21,6 @@ protocol AddToPlaylistDataStore {
 protocol AddToPlaylistPresentationLogic {
     func presentLocalAudioFiles(_ response: AddToPlaylistModel.LocalAudioFiles.Response)
     func presentError(_ response: AddToPlaylistModel.Error.Response)
-    func presentCellData(_ response: AddToPlaylistModel.CellData.Response)
     func presentTrackSelection(_ response: AddToPlaylistModel.TrackSelection.Response)
     func presentPickAll(_ response: AddToPlaylistModel.PickTracks.Response)
     func presentSendSelectedTracks(_ response: AddToPlaylistModel.SendTracks.Response)

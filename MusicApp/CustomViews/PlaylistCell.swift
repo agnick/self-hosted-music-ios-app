@@ -45,6 +45,7 @@ final class PlaylistCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         
         configureUI()
+        accessoryType = .disclosureIndicator
     }
     
     @available(*, unavailable)
@@ -54,7 +55,8 @@ final class PlaylistCell: UITableViewCell {
     
     // MARK: - Public Methods
     func configure(_ img: UIImage?, _ title: String) {
-        
+        playlistImg.image = img
+        playlistTitle.text = title
     }
     
     // MARK: - Private Methods

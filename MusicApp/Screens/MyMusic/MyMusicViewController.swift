@@ -66,6 +66,10 @@ final class MyMusicViewController: UIViewController {
     private let interactor: (MyMusicBusinessLogic & MyMusicDataStore)
     // View factory for MyMusicViewController.
     private let viewFactory: MyMusicViewFactory
+    
+    // States.
+    private var previousCloudService: CloudServiceType?
+    private var lastSelectedSegment: Int = Constants.defaultSegment
         
     /* UI components */
     // Buttons.
@@ -107,16 +111,34 @@ final class MyMusicViewController: UIViewController {
         
         // Configure all UI elements and layout.
         configureUI()
+        
+        // Load initial data about the connected cloud service.
+        interactor.loadStart(MyMusicModel.Start.Request())
+        
+        previousCloudService = interactor.currentService
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        // Load initial data about the connected cloud service.
         interactor.loadStart(MyMusicModel.Start.Request())
         
-        // Fetch and update audio files for the first segment (default selection).
-        interactor.updateAudioFiles(MyMusicModel.UpdateAudio.Request(selectedSegmentIndex: Constants.defaultSegment))
+        if interactor.currentService != previousCloudService {
+            interactor.resetCloudCache()
+            lastSelectedSegment = Constants.defaultSegment
+            audioTable.reloadData()
+            interactor.updateAudioFiles(MyMusicModel.UpdateAudio.Request(selectedSegmentIndex: lastSelectedSegment, isRefresh: false))
+        } else {
+            interactor.updateAudioFiles(MyMusicModel.UpdateAudio.Request(selectedSegmentIndex: lastSelectedSegment, isRefresh: false))
+        }
+        
+        previousCloudService = interactor.currentService
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        lastSelectedSegment = segmentedControl.selectedSegmentIndex
     }
     
     // MARK: - Tab bar actions
@@ -139,7 +161,17 @@ final class MyMusicViewController: UIViewController {
     
     // MARK: - Segment action
     @objc private func segmentedControlChanged(_ sender: UISegmentedControl) {
-        interactor.updateAudioFiles(MyMusicModel.UpdateAudio.Request(selectedSegmentIndex: segmentedControl.selectedSegmentIndex))
+        lastSelectedSegment = sender.selectedSegmentIndex
+        interactor.updateAudioFiles(MyMusicModel.UpdateAudio.Request(selectedSegmentIndex: lastSelectedSegment, isRefresh: false))
+    }
+    
+    // MARK: - Refresh table actions
+    @objc private func refreshAudioFiles() {
+        if segmentedControl.selectedSegmentIndex == Constants.defaultSegment && interactor.currentService == nil {
+            audioTable.refreshControl?.endRefreshing()
+        } else {
+            interactor.updateAudioFiles(MyMusicModel.UpdateAudio.Request(selectedSegmentIndex: lastSelectedSegment, isRefresh: true))
+        }
     }
     
     // MARK: - Player actions
@@ -169,28 +201,32 @@ final class MyMusicViewController: UIViewController {
     ) {
         activityIndicator.stopAnimating()
         audioTable.reloadData()
-        
         activateButtons(viewModel.buttonsState)
+        notConnectedLabel.isHidden = true
         
-        // TODO: set tracks count
+        if audioTable.refreshControl?.isRefreshing == true {
+            audioTable.refreshControl?.endRefreshing()
+        }
+        
+        segmentedControl.isEnabled = true
     }
     
     func displayPreLoading(_ viewModel: MyMusicModel.PreLoading.ViewModel) {
         // Block UI interactions while loading new audio files.
         activateButtons(viewModel.buttonsState)
-        
         notConnectedLabel.isHidden = true
-        
         // Reload the table view to reflect the cleared state.
         audioTable.reloadData()
         
         // Start the activity indicator to show loading progress.
-        activityIndicator.startAnimating()
+        if audioTable.refreshControl?.isRefreshing == false {
+            activityIndicator.startAnimating()
+        }
+        
+        segmentedControl.isEnabled = false
     }
     
     func displayEdit(_ viewModel: MyMusicModel.Edit.ViewModel) {
-        // Enable or disable table view editing based on the new editing mode state.
-        audioTable.setEditing(viewModel.isEditingMode, animated: true)
         // Reload the table to reflect changes in UI.
         audioTable.reloadData()
         
@@ -250,6 +286,15 @@ final class MyMusicViewController: UIViewController {
     func displayError(
         _ viewModel: MyMusicModel.Error.ViewModel
     ) {
+        activityIndicator.stopAnimating()
+        audioTable.reloadData()
+        
+        if audioTable.refreshControl?.isRefreshing == true {
+            audioTable.refreshControl?.endRefreshing()
+        }
+        
+        segmentedControl.isEnabled = true
+        
         let actions = [UIAlertAction(title: "OK", style: .default)]
         
         self.presentAlert(
@@ -257,12 +302,6 @@ final class MyMusicViewController: UIViewController {
             message: viewModel.errorDescription,
             actions: actions
         )
-    }
-    
-    func displayCellData(_ viewModel: MyMusicModel.CellData.ViewModel) {
-        guard let cell = audioTable.cellForRow(at: IndexPath(row: viewModel.index, section: 0)) as? FetchedAudioCell else { return }
-        
-        cell.configure(isEditingMode: viewModel.isEditingMode, audioName: viewModel.name, artistName: viewModel.artistName, duration: viewModel.durationInSeconds)
     }
     
     func displayTrackSelection(_ viewModel: MyMusicModel.TrackSelection.ViewModel) {
@@ -423,6 +462,15 @@ final class MyMusicViewController: UIViewController {
         audioTable.contentInset = .zero
         audioTable.contentInsetAdjustmentBehavior = .never
         
+        // Refresh control.
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(
+            self,
+            action: #selector(refreshAudioFiles),
+            for: .valueChanged
+        )
+        audioTable.refreshControl = refreshControl
+        
         // Set constraints to position the table view.
         audioTable
             .pinTop(
@@ -481,7 +529,11 @@ final class MyMusicViewController: UIViewController {
         segmentedControl.insertSegment(withTitle: cloudServiceName, at: Constants.defaultSegment, animated: false)
         segmentedControl.insertSegment(withTitle: "Скаченные", at: Constants.secondarySegment, animated: false)
         
-        segmentedControl.selectedSegmentIndex = Constants.defaultSegment
+        if lastSelectedSegment < segmentedControl.numberOfSegments {
+            segmentedControl.selectedSegmentIndex = lastSelectedSegment
+        } else {
+            segmentedControl.selectedSegmentIndex = Constants.defaultSegment
+        }
     }
     
     // MARK: - Private method to control UI enabling
@@ -518,6 +570,73 @@ final class MyMusicViewController: UIViewController {
             addButton = nil
         }
     }
+    
+    private func showMeatballsMenu(for audioFile: AudioFile) {
+        let alert = UIAlertController(title: audioFile.name, message: nil, preferredStyle: .actionSheet)
+            
+        let currentSegment = segmentedControl.selectedSegmentIndex
+        if currentSegment == Constants.defaultSegment {
+            let downloadAction = UIAlertAction(title: "Скачать трек", style: .default) { [weak self] _ in
+                self?.downloadTrack(audioFile)
+            }
+            let addToPlaylistAction = UIAlertAction(title: "Добавить в плейлист", style: .default) { [weak self] _ in
+                self?.addToPlaylist(audioFile)
+            }
+            let deleteAction = UIAlertAction(title: "Удалить", style: .destructive) { [weak self] _ in
+                self?.deleteTrack(audioFile)
+            }
+            
+            downloadAction.setValue(UIColor(color: .primary), forKey: "titleTextColor")
+            addToPlaylistAction.setValue(UIColor(color: .primary), forKey: "titleTextColor")
+            deleteAction.setValue(UIColor(color: .primary), forKey: "titleTextColor")
+            
+            alert.addAction(downloadAction)
+            alert.addAction(addToPlaylistAction)
+            alert.addAction(deleteAction)
+        } else if currentSegment == Constants.secondarySegment {
+            let editAction = UIAlertAction(title: "Изменить", style: .default) { [weak self] _ in
+                self?.editTrack(audioFile)
+            }
+            let addToPlaylistAction = UIAlertAction(title: "Добавить в плейлист", style: .default) { [weak self] _ in
+                self?.addToPlaylist(audioFile)
+            }
+            let deleteAction = UIAlertAction(title: "Удалить", style: .destructive) { [weak self] _ in
+                self?.deleteTrack(audioFile)
+            }
+            
+            editAction.setValue(UIColor(color: .primary), forKey: "titleTextColor")
+            addToPlaylistAction.setValue(UIColor(color: .primary), forKey: "titleTextColor")
+            deleteAction.setValue(UIColor(color: .primary), forKey: "titleTextColor")
+            
+            alert.addAction(editAction)
+            alert.addAction(addToPlaylistAction)
+            alert.addAction(deleteAction)
+        }
+            
+        let cancelAction = UIAlertAction(title: "Отмена", style: .cancel, handler: nil)
+        cancelAction.setValue(UIColor(color: .primary), forKey: "titleTextColor")
+        alert.addAction(cancelAction)
+            
+        present(alert, animated: true, completion: nil)
+    }
+    
+    private func downloadTrack(_ audioFile: AudioFile) {
+        interactor.downloadTrack(MyMusicModel.Download.Request(audioFile: audioFile))
+    }
+
+    private func addToPlaylist(_ audioFile: AudioFile) {
+        // TODO: Реализовать логику добавления в плейлист через interactor
+        print("Добавить в плейлист: \(audioFile.name)")
+    }
+
+    private func deleteTrack(_ audioFile: AudioFile) {
+        interactor.deleteTrack(MyMusicModel.DeleteTrack.Request(audioFile: audioFile))
+    }
+
+    private func editTrack(_ audioFile: AudioFile) {
+        // TODO: Реализовать логику изменения трека через interactor
+        print("Изменить трек: \(audioFile.name)")
+    }
 }
 
 // MARK: - UITableViewDataSource
@@ -533,7 +652,17 @@ extension MyMusicViewController: UITableViewDataSource {
         ) as! FetchedAudioCell
         cell.delegate = self
         
-        interactor.getCellData(MyMusicModel.CellData.Request(index: indexPath.row))
+        let audioFile = interactor.currentAudioFiles[indexPath.row]
+        let trackID = "\(audioFile.source.rawValue)-\(audioFile.playbackUrl)"
+        let isSelected = interactor.selectedTracks.contains(trackID)
+        
+        cell.configure(isEditingMode: interactor.isEditingModeEnabled, isSelected: isSelected, audioName: audioFile.name, artistName: audioFile.artistName, duration: audioFile.durationInSeconds, audioFile: audioFile)
+        
+        cell.meatballsMenuAction = { [weak self] audioFile in
+            guard let self = self else { return }
+            
+            self.showMeatballsMenu(for: audioFile)
+        }
         
         return cell
     }

@@ -11,7 +11,7 @@ final class AddToPlaylistWorker: AddToPlaylistWorkerProtocol {
     private let userDefaults = UserDefaults.standard
     
     func loadSortPreference() -> SortType {
-        if let rawValue = userDefaults.string(forKey: UserDefaultsKeys.sortKey), let savedSort = SortType(rawValue: rawValue) {
+        if let rawValue = userDefaults.string(forKey: UserDefaultsKeys.sortAudiosKey), let savedSort = SortType(rawValue: rawValue) {
             return savedSort
         }
         

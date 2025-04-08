@@ -22,14 +22,6 @@ final class AddToPlaylistPresenter: AddToPlaylistPresentationLogic {
         }
     }
     
-    func presentCellData(_ response: AddToPlaylistModel.CellData.Response) {
-        DispatchQueue.main.async {
-            let viewModel = MyMusicModel.CellData.ViewModel(index: response.index, isEditingMode: response.isEditingMode, isSelected: response.isSelected, name: response.audioFile.name, artistName: response.audioFile.artistName, durationInSeconds: response.audioFile.durationInSeconds)
-            
-            self.view?.displayCellData(viewModel)
-        }
-    }
-    
     func presentTrackSelection(_ response: AddToPlaylistModel.TrackSelection.Response) {
         DispatchQueue.main.async {
             self.view?.displayTrackSelection(AddToPlaylistModel.TrackSelection.ViewModel(index: response.index, isSelected: response.selectedAudioFiles.count > 0, selectedAudioFilesCount: String(response.selectedAudioFiles.count)))

@@ -8,18 +8,19 @@
 final class AddToPlaylistInteractor: AddToPlaylistBusinessLogic, AddToPlaylistDataStore {
     // MARK: - Variables
     private let presenter: AddToPlaylistPresentationLogic
-    private let worker: AddToPlaylistWorkerProtocol
     private let localAudioService: LocalAudioService
+    private let userDefaultsManager: UserDefaultsManager
+    
     var currentAudioFiles: [AudioFile] = []
     var selectedTracks: Set<String> = []
     private var originalAudioFiles: [AudioFile] = []
     private var searchQuery: String = ""
     
     // MARK: - Lifecycle
-    init (presenter: AddToPlaylistPresentationLogic, localAudioService: LocalAudioService, worker: AddToPlaylistWorkerProtocol) {
+    init (presenter: AddToPlaylistPresentationLogic, localAudioService: LocalAudioService, userDefaultsManager: UserDefaultsManager) {
         self.presenter = presenter
         self.localAudioService = localAudioService
-        self.worker = worker
+        self.userDefaultsManager = userDefaultsManager
     }
     
     // MARK: - Public methods
@@ -38,15 +39,6 @@ final class AddToPlaylistInteractor: AddToPlaylistBusinessLogic, AddToPlaylistDa
                 presenter.presentError(AddToPlaylistModel.Error.Response(error: error))
             }
         }
-    }
-    
-    func getCellData(_ request: AddToPlaylistModel.CellData.Request) {
-        guard request.index < currentAudioFiles.count else { return }
-        
-        let audioFile = currentAudioFiles[request.index]
-        let isSelected = selectedTracks.contains(audioFile.playbackUrl)
-        
-        presenter.presentCellData(AddToPlaylistModel.CellData.Response(index: request.index, isEditingMode: true, isSelected: isSelected, audioFile: audioFile))
     }
     
     func toggleTrackSelection(_ request: AddToPlaylistModel.TrackSelection.Request) {
@@ -91,7 +83,7 @@ final class AddToPlaylistInteractor: AddToPlaylistBusinessLogic, AddToPlaylistDa
     
     // MARK: - Private methods
     private func applySortingAndFiltering() {
-        let sortType = worker.loadSortPreference()
+        let sortType = userDefaultsManager.loadSortPreference(for: UserDefaultsKeys.sortAudiosKey)
         
         currentAudioFiles = originalAudioFiles
         

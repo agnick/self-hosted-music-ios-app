@@ -60,6 +60,10 @@ final class PlayerViewController: UIViewController {
     private let interactor: PlayerBusinessLogic
     private let viewFactory: PlayerViewFactory
     
+    // States.
+    private var isSeeking = false
+    private var isSeekingInProgress = false
+    
     // UI components
     private let trackImg: UIImageView = UIImageView(image: UIImage(image: .icAudioImgSvg))
     private let progressSlider: UISlider = UISlider()
@@ -111,8 +115,12 @@ final class PlayerViewController: UIViewController {
         if let track = notification.object as? AudioFile {
             trackName?.text = track.name
             artistName?.text = track.artistName
-            progressSlider.maximumValue = Float(track.durationInSeconds ?? Double(Constants.progressSliderMinValue))
-            progressSlider.value = Constants.progressSliderMinValue
+            
+            UIView.performWithoutAnimation {
+                progressSlider.maximumValue = Float(track.durationInSeconds ?? Double(Constants.progressSliderMinValue))
+                progressSlider.setValue(Constants.progressSliderMinValue, animated: false)
+            }
+            
             trackDuration?.text = formatDuration(track.durationInSeconds)
             currentTrackTime?.text = formatDuration(Double(progressSlider.value))
         }
@@ -127,10 +135,19 @@ final class PlayerViewController: UIViewController {
     }
     
     @objc private func updateSliderPosition(_ notification: Notification) {
-        if let currentTime = notification.object as? Double {
-            progressSlider.value = Float(currentTime)
-            currentTrackTime?.text = formatDuration(Double(progressSlider.value))
+        guard
+            let currentTime = notification.object as? Double,
+            !isSeeking,
+            !isSeekingInProgress
+        else {
+            return
         }
+                
+        UIView.performWithoutAnimation {
+            progressSlider.setValue(Float(currentTime), animated: false)
+        }
+        
+        currentTrackTime?.text = formatDuration(currentTime)
     }
     
     // MARK: - Actions
@@ -150,16 +167,36 @@ final class PlayerViewController: UIViewController {
         interactor.playNextTrack()
     }
     
-    @objc private func sliderValueChanged() {
-        interactor.rewindTrack(PlayerModel.Rewind.Request(sliderValue: progressSlider.value))
+    @objc private func sliderTouchBegan() {
+        isSeeking = true
     }
+
+    @objc private func sliderTouchEnded() {
+        isSeeking = false
+        isSeekingInProgress = true
+        
+        interactor.rewindTrack(PlayerModel.Rewind.Request(sliderValue: progressSlider.value))
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            self.isSeekingInProgress = false
+        }
+    }
+
+    @objc private func sliderValueChanged() {
+        currentTrackTime?.text = formatDuration(Double(progressSlider.value))
+    }
+
     
     // MARK: - Public methods
     func displayStart(_ viewModel: PlayerModel.Start.ViewModel) {
         trackName?.text = viewModel.trackName
         artistName?.text = viewModel.artistName
+        
         progressSlider.maximumValue = Float(viewModel.trackDuration ?? Double(Constants.progressSliderMinValue))
+        progressSlider.setValue(Float(viewModel.currentTime), animated: false)
+        
         trackDuration?.text = formatDuration(viewModel.trackDuration)
+        currentTrackTime?.text = formatDuration(viewModel.currentTime)
     }
     
     func displayPlayPauseState(_ viewModel: PlayerModel.PlayPause.ViewModel) {
@@ -201,7 +238,11 @@ final class PlayerViewController: UIViewController {
         
         progressSlider.minimumValue = Constants.progressSliderMinValue
         progressSlider.maximumValue = Constants.progressSliderMaxDefaultValue
+        
+        progressSlider.addTarget(self, action: #selector(sliderTouchBegan), for: .touchDown)
+        progressSlider.addTarget(self, action: #selector(sliderTouchEnded), for: [.touchUpInside, .touchUpOutside])
         progressSlider.addTarget(self, action: #selector(sliderValueChanged), for: .valueChanged)
+
         
         progressSlider.pinTop(to: trackImg.bottomAnchor, Constants.trackImgTop)
         progressSlider.pinHorizontal(to: view, Constants.progressSliderOffset)

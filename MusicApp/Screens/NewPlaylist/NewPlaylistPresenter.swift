@@ -32,9 +32,7 @@ final class NewPlaylistPresenter: NewPlaylistPresentationLogic {
     
     func presentPickedPlaylistImage(_ response: NewPlaylistModel.PlaylistImage.Response) {
         DispatchQueue.main.async {
-            if let image = response.imageData as? UIImage {
-                self.view?.displayPickedImage(NewPlaylistModel.PlaylistImage.ViewModel(image: image))
-            }
+            self.view?.displayPickedImage(NewPlaylistModel.PlaylistImage.ViewModel(image: response.imageData))
         }
     }
     

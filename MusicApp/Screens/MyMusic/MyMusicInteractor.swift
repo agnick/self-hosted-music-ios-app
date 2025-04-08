@@ -13,27 +13,34 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
     private let cloudAudioService: CloudAudioService
     private let localAudioService: LocalAudioService
     private let audioPlayerService: AudioPlayerService
-    private let worker: MyMusicWorker
+    private let userDefaultsManager: UserDefaultsManager
     
     private var searchQuery: String = ""
+    private var isEditing = false
+    private var originalAudioFiles: [AudioFile] = []
+    private var currentFetchTask: Task<Void, Never>?
+    private var cloudAudioFiles: [AudioFile]? = nil
+    private var localAudioFiles: [AudioFile]? = nil
     
+    var currentService: CloudServiceType? = nil
+    var isEditingModeEnabled: Bool {
+        return isEditing
+    }
     var currentAudioFiles: [AudioFile] = []
     var selectedTracks: Set<String> = []
-    private var originalAudioFiles: [AudioFile] = []
-    private var isEditing = false
-    private var currentFetchTask: Task<Void, Never>?
     
-    init (presenter: MyMusicPresentationLogic, cloudAuthService: CloudAuthService, cloudAudioService: CloudAudioService, localAudioService: LocalAudioService, audioPlayerService: AudioPlayerService, worker: MyMusicWorker) {
+    init (presenter: MyMusicPresentationLogic, cloudAuthService: CloudAuthService, cloudAudioService: CloudAudioService, localAudioService: LocalAudioService, audioPlayerService: AudioPlayerService, userDefaultsManager: UserDefaultsManager) {
         self.presenter = presenter
         self.cloudAuthService = cloudAuthService
         self.cloudAudioService = cloudAudioService
         self.localAudioService = localAudioService
         self.audioPlayerService = audioPlayerService
-        self.worker = worker
+        self.userDefaultsManager = userDefaultsManager
     }
     
     func loadStart(_ request: MyMusicModel.Start.Request) {
         let cloudService = cloudAuthService.getAuthorizedService()
+        currentService = cloudService
         
         presenter.presentStart(MyMusicModel.Start.Response(cloudService: cloudService))
     }
@@ -41,26 +48,37 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
     func updateAudioFiles(_ request: MyMusicModel.UpdateAudio.Request) {
         currentFetchTask?.cancel()
         
-        currentAudioFiles.removeAll()
-        selectedTracks.removeAll()
-        
         let segmentIndex = request.selectedSegmentIndex
         
         switch segmentIndex {
         case 0:
-            guard let _ = cloudAuthService.getAuthorizedService() else {
+            if let _ = cloudAuthService.getAuthorizedService() {
+                if let cachedCloudFiles = cloudAudioFiles, !request.isRefresh {
+                    originalAudioFiles = cachedCloudFiles
+                    applySortingAndFiltering()
+                    presenter.presentAudioFiles(MyMusicModel.FetchedFiles.Response(audioFiles: currentAudioFiles))
+                } else {
+                    currentAudioFiles = []
+                    presenter.presentPreLoading()
+                    currentFetchTask = Task {
+                        await fetchCloudAudioFiles(MyMusicModel.FetchedFiles.Request())
+                    }
+                }
+            } else {
+                currentAudioFiles = []
                 presenter.presentNotConnectedMessage()
-                return
-            }
-            
-            presenter.presentPreLoading()
-            currentFetchTask = Task {
-                await fetchCloudAudioFiles(MyMusicModel.FetchedFiles.Request())
             }
         case 1:
-            presenter.presentPreLoading()
-            currentFetchTask = Task {
-                await fetchLocalAudioFiles(MyMusicModel.FetchedFiles.Request())
+            if let cachedLocalFiles = localAudioFiles, !request.isRefresh {
+                originalAudioFiles = cachedLocalFiles
+                applySortingAndFiltering()
+                presenter.presentAudioFiles(MyMusicModel.FetchedFiles.Response(audioFiles: currentAudioFiles))
+            } else {
+                currentAudioFiles = []
+                presenter.presentPreLoading()
+                currentFetchTask = Task {
+                    await fetchLocalAudioFiles(MyMusicModel.FetchedFiles.Request())
+                }
             }
         default:
             currentAudioFiles = []
@@ -68,7 +86,7 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
     }
     
     func sortAudioFiles(_ request: MyMusicModel.Sort.Request) {
-        worker.saveSortPreference(request.sortType)
+        userDefaultsManager.saveSortPreference(request.sortType, for: UserDefaultsKeys.sortAudiosKey)
         applySortingAndFiltering()
     }
     
@@ -146,7 +164,7 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
         else {
             return
         }
-                
+        
         audioPlayerService.play(audioFile: firstAudioFile, playlist: currentAudioFiles)
     }
     
@@ -175,16 +193,6 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
         presenter.presentSortOptions()
     }
     
-    func getCellData(_ request: MyMusicModel.CellData.Request) {
-        guard request.index < currentAudioFiles.count else { return }
-        
-        let audioFile = currentAudioFiles[request.index]
-        let trackID = uniqueTrackID(for: audioFile)
-        let isSelected = selectedTracks.contains(trackID)
-        
-        presenter.presentCellData(MyMusicModel.CellData.Response(index: request.index, isEditingMode: isEditing, isSelected: isSelected, audioFile: audioFile))
-    }
-    
     func toggleTrackSelection(_ request: MyMusicModel.TrackSelection.Request) {
         let audioFile = currentAudioFiles[request.index]
         let trackID = uniqueTrackID(for: audioFile)
@@ -197,6 +205,53 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
         }
         
         presenter.presentTrackSelection(MyMusicModel.TrackSelection.Response(index: request.index, selectedCount: selectedTracks.count))
+    }
+    
+    func resetCloudCache() {
+        cloudAudioFiles = nil
+        currentAudioFiles = []
+    }
+    
+    func downloadTrack(_ request: MyMusicModel.Download.Request) {
+        Task {
+            do {
+                let audioFile = request.audioFile
+                
+                if let service = currentService {
+                    let success = try await cloudAudioService.downloadAudioFile(for: service, from: audioFile.downloadPath, fileName: audioFile.name)
+                    if success {
+                        print("Трек успешно загружен: \(audioFile.name)")
+                    } else {
+                        print("Не удалось загрузить трек: \(audioFile.name)")
+                    }
+                }
+            } catch {
+                print("Ошибка при загрузке трека: \(error)")
+                await MainActor.run {
+                    presenter.presentError(MyMusicModel.Error.Response(error: error))
+                }
+            }
+        }
+    }
+    
+    func deleteTrack(_ request: MyMusicModel.DeleteTrack.Request) {
+        Task {
+            do {
+                let audioFile = request.audioFile
+                if audioFile.source == .local {
+                    try localAudioService.deleteAudioFile(filePath: audioFile.downloadPath)
+                    await fetchLocalAudioFiles(MyMusicModel.FetchedFiles.Request())
+                } else if let service = currentService {
+                    try await cloudAudioService.deleteAudioFile(for: service, from: audioFile.downloadPath)
+                    await fetchCloudAudioFiles(MyMusicModel.FetchedFiles.Request())
+                }
+            } catch {
+                print("Ошибка при удалении трека: \(error)")
+                await MainActor.run {
+                    presenter.presentError(MyMusicModel.Error.Response(error: error))
+                }
+            }
+        }
     }
     
     // MARK: - Private methods
@@ -226,6 +281,7 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
                 return
             }
             
+            cloudAudioFiles = audioFiles
             originalAudioFiles = audioFiles
             applySortingAndFiltering()
             
@@ -255,6 +311,7 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
                 return
             }
             
+            localAudioFiles = audioFiles
             originalAudioFiles = audioFiles
             applySortingAndFiltering()
             
@@ -275,7 +332,7 @@ final class MyMusicInteractor: MyMusicBusinessLogic, MyMusicDataStore {
             return
         }
         
-        let sortType = worker.loadSortPreference()
+        let sortType = userDefaultsManager.loadSortPreference(for: UserDefaultsKeys.sortAudiosKey)
         
         currentAudioFiles = originalAudioFiles
         

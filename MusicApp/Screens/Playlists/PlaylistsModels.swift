@@ -6,11 +6,33 @@
 //
 
 enum PlaylistsModel {
-    enum Start {
-        struct Request {}
+    enum Sort {
+        struct Request {
+            let sortType: SortType
+        }
+    }
+    
+    enum SortOptions {
+        struct ViewModel {
+            let sortOptions: [SortOption]
+        }
         
-        struct Response {}
-        
-        struct ViewModel {}
+        struct SortOption {
+            let title: String
+            let request: PlaylistsModel.Sort.Request?
+            let isCancel: Bool
+            
+            init(title: String, request: PlaylistsModel.Sort.Request?, isCancel: Bool) {
+                self.title = title
+                self.request = request
+                self.isCancel = isCancel
+            }
+        }
+    }
+    
+    enum Search {
+        struct Request {
+            let query: String
+        }
     }
 }

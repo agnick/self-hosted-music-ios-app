@@ -24,15 +24,19 @@ protocol MyMusicBusinessLogic {
     func pickAll(_ request: MyMusicModel.PickTracks.Request)
     // Sort options
     func loadSortOptions()
-    // Get Cell Data
-    func getCellData(_ request: MyMusicModel.CellData.Request)
     // Select track
     func toggleTrackSelection(_ request: MyMusicModel.TrackSelection.Request)
+    // Reset cloud cache
+    func resetCloudCache()
+    func downloadTrack(_ request: MyMusicModel.Download.Request)
+    func deleteTrack(_ request: MyMusicModel.DeleteTrack.Request)
 }
 
 protocol MyMusicDataStore {
     var currentAudioFiles: [AudioFile] { get set }
     var selectedTracks: Set<String> { get set }
+    var isEditingModeEnabled: Bool { get }
+    var currentService: CloudServiceType? { get }
 }
 
 protocol MyMusicPresentationLogic {
@@ -42,7 +46,6 @@ protocol MyMusicPresentationLogic {
     func presentEdit(_ response: MyMusicModel.Edit.Response)
     func presentPickAll(_ response: MyMusicModel.PickTracks.Response)
     func presentSortOptions()
-    func presentCellData(_ response: MyMusicModel.CellData.Response)
     func presentTrackSelection(_ response: MyMusicModel.TrackSelection.Response)
     func presentNotConnectedMessage()
     func presentDeleteAlert(_ response: MyMusicModel.DeleteAlert.Response)

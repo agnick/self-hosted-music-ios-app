@@ -6,11 +6,13 @@
 //
 
 import Foundation
+import UIKit
 
 // Structure for storing audio file details.
 struct AudioFile {
     let name: String
     let artistName: String
+    let trackImg: UIImage = UIImage(image: .icAudioImgSvg)
     let sizeInMB: Double
     let durationInSeconds: Double?
     let downloadPath: String

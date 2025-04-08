@@ -56,8 +56,11 @@ final class FetchedAudioCell: UITableViewCell {
     // MARK: - Variables
     static let reuseId: String = "AudioFilesCell"
     
+    var audioFile: AudioFile?
+    
     // Closures.
     var downloadAction: (() -> Void)?
+    var meatballsMenuAction: ((AudioFile) -> Void)?
     
     // UI Components.
     private let audioImg: UIImageView = UIImageView()
@@ -91,7 +94,9 @@ final class FetchedAudioCell: UITableViewCell {
     }
     
     @objc private func meatballsMenuTapped() {
-        
+        if let audioFile = audioFile {
+            meatballsMenuAction?(audioFile)
+        }
     }
     
     @objc private func checkBoxTapped() {
@@ -103,17 +108,19 @@ final class FetchedAudioCell: UITableViewCell {
     }
     
     // MARK: - Public Methods
-    func configure(isEditingMode: Bool, img: UIImage = UIImage(image: .icAudioImg), audioName: String, artistName: String, duration: Double?) {
+    func configure(isEditingMode: Bool, img: UIImage = UIImage(image: .icAudioImg), isSelected: Bool, audioName: String, artistName: String, duration: Double?, audioFile: AudioFile) {
+        self.audioFile = audioFile
         audioImg.image = img
         audioNameLabel.text = audioName
         artistNameLabel.text = artistName
-        
         audioDuration.text = formatDuration(duration) ?? ""
         
         checkBox.isHidden = !isEditingMode
         
+        updateCheckBoxState(isPicked: isSelected)
+        
         if isEditingMode {
-            wrapLeftConstraint.constant = checkBox.frame.maxX + Constants.wrapEditingLeading
+            wrapLeftConstraint.constant = Constants.checkBoxLeft + Constants.checkBoxWidth + Constants.wrapEditingLeading
             meatballsMenu.isHidden = true
         } else {
             wrapLeftConstraint.constant = Constants.wrapOffsetH

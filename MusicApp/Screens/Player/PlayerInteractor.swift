@@ -21,8 +21,9 @@ final class PlayerInteractor: PlayerBusinessLogic {
     // MARK: - Public methods
     func loadStart() {
         if let currentTrack = audioPlayerService.getCurrentTrack() {
+            let currentTime = audioPlayerService.getCurrentTime()
             
-            presenter.presentStart(PlayerModel.Start.Response(currentTrack: currentTrack))
+            presenter.presentStart(PlayerModel.Start.Response(currentTrack: currentTrack, currentTime: currentTime))
             loadPlayPauseState()
             loadRepeatState()
         }

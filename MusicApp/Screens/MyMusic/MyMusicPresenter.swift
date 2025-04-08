@@ -71,14 +71,6 @@ final class MyMusicPresenter: MyMusicPresentationLogic {
         }
     }
     
-    func presentCellData(_ response: MyMusicModel.CellData.Response) {
-        DispatchQueue.main.async {
-            let viewModel = MyMusicModel.CellData.ViewModel(index: response.index, isEditingMode: response.isEditingMode, isSelected: response.isSelected, name: response.audioFile.name, artistName: response.audioFile.artistName, durationInSeconds: response.audioFile.durationInSeconds)
-            
-            self.view?.displayCellData(viewModel)
-        }
-    }
-    
     func presentTrackSelection(_ response: MyMusicModel.TrackSelection.Response) {
         DispatchQueue.main.async {
             self.view?.displayTrackSelection(MyMusicModel.TrackSelection.ViewModel(index: response.index, isSelected: response.selectedCount > 0))

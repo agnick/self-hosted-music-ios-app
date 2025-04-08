@@ -38,7 +38,7 @@ enum NewPlaylistModel {
         }
         
         struct Response {
-            let imageData: Any?
+            let imageData: UIImage
         }
         
         struct ViewModel {
@@ -55,6 +55,12 @@ enum NewPlaylistModel {
     enum PlaylistName {
         struct Request {
             let playlistName: String
+        }
+    }
+    
+    enum SavePlaylist {
+        struct Request {
+            let playlist: Playlist
         }
     }
     

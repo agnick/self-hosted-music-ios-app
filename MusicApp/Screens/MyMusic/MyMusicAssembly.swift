@@ -14,8 +14,8 @@ enum MyMusicAssembly {
         let cloudAudioService = CloudAudioService(cloudAuthService: cloudAuthService)
         let localAudioService = LocalAudioService()
         let audioPlayerService = AudioPlayerService()
-        let worker = MyMusicWorker()
-        let interactor = MyMusicInteractor(presenter: presenter, cloudAuthService: cloudAuthService, cloudAudioService: cloudAudioService, localAudioService: localAudioService, audioPlayerService: audioPlayerService, worker: worker)
+        let userDefaultsManager = UserDefaultsManager()
+        let interactor = MyMusicInteractor(presenter: presenter, cloudAuthService: cloudAuthService, cloudAudioService: cloudAudioService, localAudioService: localAudioService, audioPlayerService: audioPlayerService, userDefaultsManager: userDefaultsManager)
         let viewFactory = MyMusicViewFactory()
         let view = MyMusicViewController(interactor: interactor, viewFactory: viewFactory)
         presenter.view = view

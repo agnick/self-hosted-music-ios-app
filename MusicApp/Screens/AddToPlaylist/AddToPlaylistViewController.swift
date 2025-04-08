@@ -123,15 +123,17 @@ final class AddToPlaylistViewController: UIViewController {
         setSelectedTracksCount(viewModel.selectedFilesCount)
     }
     
-    func displayCellData(_ viewModel: MyMusicModel.CellData.ViewModel) {
-        guard let cell = audioTable.cellForRow(at: IndexPath(row: viewModel.index, section: 0)) as? FetchedAudioCell else { return }
-        
-        cell.configure(isEditingMode: viewModel.isEditingMode, audioName: viewModel.name, artistName: viewModel.artistName, duration: viewModel.durationInSeconds)
-    }
-    
     func displayTrackSelection(_ viewModel: AddToPlaylistModel.TrackSelection.ViewModel) {
-        let indexPath = IndexPath(row: viewModel.index, section: 0)
-        audioTable.reloadRows(at: [indexPath], with: .automatic)
+        guard
+            let cell = audioTable.cellForRow(at: IndexPath(row: viewModel.index, section: 0)) as? FetchedAudioCell
+        else {
+            return
+        }
+        
+        let audioFile = interactor.currentAudioFiles[viewModel.index]
+        let isSelected = interactor.selectedTracks.contains(audioFile.playbackUrl)
+        
+        cell.updateCheckBoxState(isPicked: isSelected)
         
         addButton?.isEnabled = viewModel.isSelected
         
@@ -141,9 +143,7 @@ final class AddToPlaylistViewController: UIViewController {
     func displayPickAll(_ viewModel: AddToPlaylistModel.PickTracks.ViewModel) {
         pickAllButton?.setTitle(viewModel.buttonTitle, for: .normal)
         audioTable.reloadData()
-        
         addButton?.isEnabled = !viewModel.state
-        
         setSelectedTracksCount(viewModel.selectedAudioFilesCount)
     }
     
@@ -351,9 +351,12 @@ extension AddToPlaylistViewController: UITableViewDataSource {
             withIdentifier: FetchedAudioCell.reuseId,
             for: indexPath
         ) as! FetchedAudioCell
-        cell.delegate = self
         
-        interactor.getCellData(AddToPlaylistModel.CellData.Request(index: indexPath.row))
+        let audioFile = interactor.currentAudioFiles[indexPath.row]
+        let isSelected = interactor.selectedTracks.contains(audioFile.playbackUrl)
+        
+        cell.delegate = self
+        cell.configure(isEditingMode: true, isSelected: isSelected, audioName: audioFile.name, artistName: audioFile.artistName, duration: audioFile.durationInSeconds, audioFile: audioFile)
         
         return cell
     }

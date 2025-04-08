@@ -51,6 +51,9 @@ final class NewPlaylistViewController: UIViewController {
     private var pickImageButton: UIButton?
     private let addTracksButton: UIButton = UIButton(type: .system)
     
+    // Images.
+    private var playlistImage: UIImage?
+    
     // TextFields
     private var playlistNameTextView: UITextView?
     
@@ -83,6 +86,12 @@ final class NewPlaylistViewController: UIViewController {
     }
 
     @objc private func approveButtonTapped() {
+        if let text = playlistNameTextView?.text,
+           text != Constants.placeholderText,
+           !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            interactor.loadPlaylistName(NewPlaylistModel.PlaylistName.Request(playlistName: text))
+        }
+        
         interactor.savePlaylist()
         navigationController?.popViewController(animated: true)
     }
@@ -160,9 +169,8 @@ final class NewPlaylistViewController: UIViewController {
         pickImageButton.clipsToBounds = true
         
         pickImageButton.addTarget(self, action: #selector(pickImageButtonTapped), for: .touchUpInside)
-        
-        pickImageButton.setWidth(Constants.pickImageButtonSize)
-        pickImageButton.setHeight(Constants.pickImageButtonSize)
+                
+        playlistImage = pickImageButton.imageView?.image
         
         // Text view settings.
         let playlistNameTextView: UITextView = UITextView()
@@ -172,13 +180,16 @@ final class NewPlaylistViewController: UIViewController {
         playlistNameTextView.isScrollEnabled = true
         
         playlistNameTextView.delegate = self
-        
+                
         // Add to stack.
         self.pickImageButton = pickImageButton
         self.playlistNameTextView = playlistNameTextView
         
         editPlaylistStackView.addArrangedSubview(pickImageButton)
         editPlaylistStackView.addArrangedSubview(playlistNameTextView)
+        
+        pickImageButton.setWidth(Constants.pickImageButtonSize)
+        pickImageButton.setHeight(Constants.pickImageButtonSize)
         
         // Stack settings.
         editPlaylistStackView.pinTop(to: view.safeAreaLayoutGuide.topAnchor, Constants.editPlaylistStackViewTop)

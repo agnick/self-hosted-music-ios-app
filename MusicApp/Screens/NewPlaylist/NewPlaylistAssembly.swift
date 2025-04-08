@@ -8,9 +8,10 @@
 import UIKit
 
 enum NewPlaylistAssembly {
-    static func build() -> UIViewController {
+    static func build(coreDataManager: CoreDataManager) -> UIViewController {
         let presenter = NewPlaylistPresenter()
-        let interactor = NewPlaylistInteractor(presenter: presenter)
+        let worker = NewPlaylistWorker(coreDataManager: coreDataManager)
+        let interactor = NewPlaylistInteractor(presenter: presenter, worker: worker)
         let view = NewPlaylistViewController(interactor: interactor)
         presenter.view = view
         

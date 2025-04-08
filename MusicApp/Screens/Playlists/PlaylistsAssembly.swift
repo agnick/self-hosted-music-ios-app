@@ -10,7 +10,9 @@ import UIKit
 enum PlaylistsAssembly {
     static func build() -> UIViewController {
         let presenter = PlaylistsPresenter()
-        let interactor = PlaylistsInteractor(presenter: presenter)
+        let coreDataManager = CoreDataManager()
+        let userDefaultsManager = UserDefaultsManager()
+        let interactor = PlaylistsInteractor(presenter: presenter, coreDataManager: coreDataManager, userDefaultsManager: userDefaultsManager)
         let view = PlaylistsViewController(interactor: interactor)
         presenter.view = view
         

@@ -7,6 +7,7 @@
 
 import AVFoundation
 import UIKit
+import MediaPlayer
 
 struct AudioPlayerService {
     private let audioPlayer = AudioPlayer.shared
@@ -46,6 +47,10 @@ struct AudioPlayerService {
     func playPrevTrack() {
         audioPlayer.playPrevTrack()
     }
+    
+    func getCurrentTime() -> Double {
+        return audioPlayer.getCurrentTime()
+    }
 }
 
 final class AudioPlayer: NSObject {
@@ -57,14 +62,20 @@ final class AudioPlayer: NSObject {
     private var currentPlaylist: [AudioFile] = []
     private var isRepeatEnabled: Bool = false
     private var timeObserverToken: Any?
+    private var pauseTimer: Timer?
     
     // MARK: - Lifecycle
     private override init() {
         super.init()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(handleInterruption), name: AVAudioSession.interruptionNotification, object: nil)
     }
     
     deinit {
         stopObservingTime()
+        
+        NotificationCenter.default.removeObserver(self, name: AVAudioSession.interruptionNotification, object: nil)
+                NotificationCenter.default.removeObserver(self)
         NotificationCenter.default.removeObserver(self)
     }
     
@@ -78,6 +89,30 @@ final class AudioPlayer: NSObject {
         }
         
         NotificationCenter.default.post(name: .AudioPlayerStateChanged, object: nil)
+    }
+    
+    @objc private func handleInterruption(notification: Notification) {
+        guard
+            let userInfo = notification.userInfo,
+            let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+            let type = AVAudioSession.InterruptionType(rawValue: typeValue)
+        else {
+            return
+        }
+            
+        switch type {
+        case .began:
+            player?.pause()
+        case .ended:
+            if let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt {
+                let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
+                if options.contains(.shouldResume) {
+                    player?.play()
+                }
+            }
+        default:
+            break
+        }
     }
     
     override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
@@ -146,6 +181,7 @@ final class AudioPlayer: NSObject {
         let nextTrack = currentPlaylist[nextIndex]
         
         play(audioFile: nextTrack, playlist: currentPlaylist)
+        updateNowPlayingInfo()
     }
     
     func playPrevTrack() {
@@ -160,10 +196,61 @@ final class AudioPlayer: NSObject {
         let prevTrack = currentPlaylist[prevIndex]
         
         play(audioFile: prevTrack, playlist: currentPlaylist)
+        updateNowPlayingInfo()
+    }
+    
+    func getCurrentTime() -> Double {
+        return player?.currentTime().seconds ?? 0
     }
     
     // MARK: - Private methods
+    private func setupRemoteCommandCenter() {
+        let commandCenter = MPRemoteCommandCenter.shared()
+            
+        commandCenter.playCommand.addTarget { [weak self] event in
+            self?.player?.play()
+            return .success
+        }
+            
+        commandCenter.pauseCommand.addTarget { [weak self] event in
+            self?.player?.pause()
+            return .success
+        }
+            
+        commandCenter.nextTrackCommand.addTarget { [weak self] event in
+            self?.playNextTrack()
+            return .success
+        }
+            
+        commandCenter.previousTrackCommand.addTarget { [weak self] event in
+            self?.playPrevTrack()
+            return .success
+        }
+        
+        commandCenter.changePlaybackPositionCommand.addTarget { [weak self] event in
+            guard let positionEvent = event as? MPChangePlaybackPositionCommandEvent else {
+                return .commandFailed
+            }
+            
+            let time = CMTime(seconds: positionEvent.positionTime, preferredTimescale: 1)
+            
+            self?.player?.seek(to: time)
+            
+            self?.updateNowPlayingInfo()
+            return .success
+        }
+    }
+    
     private func setupPlayer(with playerItem: AVPlayerItem, for audioFile: AudioFile) {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Error in setting up AVAudioSession: \(error)")
+        }
+        
+        stopObservingTime()
+        
         player = AVPlayer(playerItem: playerItem)
         currentTrack = audioFile
         
@@ -177,14 +264,36 @@ final class AudioPlayer: NSObject {
         NotificationCenter.default.addObserver(self, selector: #selector(trackDidFinishPlaying), name: .AVPlayerItemDidPlayToEndTime, object: playerItem)
         
         player?.play()
+        setupRemoteCommandCenter()
+        updateNowPlayingInfo()
         startObservingTime()
+    }
+    
+    private func updateNowPlayingInfo() {
+        guard let currentTrack = currentTrack else { return }
+            
+        var nowPlayingInfo = [String: Any]()
+        nowPlayingInfo[MPMediaItemPropertyTitle] = currentTrack.name
+        nowPlayingInfo[MPMediaItemPropertyArtist] = currentTrack.artistName
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = currentTrack.durationInSeconds ?? 0
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = player?.currentTime().seconds ?? 0
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = player?.rate ?? 0
+        
+        let artworkImage = currentTrack.trackImg
+        let artwork = MPMediaItemArtwork(boundsSize: artworkImage.size) { _ in
+            return artworkImage
+        }
+        nowPlayingInfo[MPMediaItemPropertyArtwork] = artwork
+            
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
     
     private func startObservingTime() {
         let interval = CMTime(seconds: 1, preferredTimescale: 1)
-        timeObserverToken = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { time in
+        timeObserverToken = player?.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             let currentTime = time.seconds
             NotificationCenter.default.post(name: .AudioPlayerTimeChanged, object: currentTime)
+            self?.updateNowPlayingInfo()
         }
     }
     

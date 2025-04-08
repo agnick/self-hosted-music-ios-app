@@ -29,7 +29,7 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
         }
         
         let scopes = ["https://www.googleapis.com/auth/drive"]
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+        try await withCheckedThrowingContinuation { [weak self] (continuation: CheckedContinuation<Void, Error>) in
             DispatchQueue.main.async {
                 GIDSignIn.sharedInstance
                     .signIn(
@@ -50,7 +50,7 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
                             return
                         }
                         
-                        self.driveService.authorizer = authentication
+                        self?.driveService.authorizer = authentication
                             .fetcherAuthorizer()
                         continuation.resume()
                     }
@@ -89,7 +89,7 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
     func fetchAudio() async throws -> [AudioFile] {
         let query = GTLRDriveQuery_FilesList.query()
         query.q = "mimeType contains 'audio/' and trashed = false"
-        query.fields = "files(id, name, webContentLink, size)"
+        query.fields = "files(id, name, size, webContentLink, permissions)"
         
         let result: GTLRDrive_FileList = try await withCheckedThrowingContinuation { continuation in
             driveService.executeQuery(query) { _, result, error in
@@ -122,44 +122,37 @@ final class GoogleDriveWorker: CloudWorkerProtocol {
         
         try await withThrowingTaskGroup(of: AudioFile?.self) { group in
             for file in files {
-                group.addTask { [weak self] in
-                    guard
-                        let self = self
-                    else {
-                        throw NSError(domain: "Retain cycle", code: 0)
-                    }
-                    
-                    do {
-                        guard
-                            let webContentLink = file.webContentLink,
-                            let url = URL(string: webContentLink)
-                        else {
-                            throw NSError(domain: "Invalid URL", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid web content link"])
+                let isPublic = file.permissions?.contains(where: { $0.type == "anyone" }) ?? false
+                
+                if isPublic, let webContentLink = file.webContentLink {
+                    group.addTask {
+                        do {
+                            guard
+                                let url = URL(string: webContentLink)
+                            else {
+                                throw NSError(domain: "Invalid URL", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid webContentLink URL"])
+                            }
+                                                        
+                            let asset = AVURLAsset(url: url)
+                            let duration = try await asset.load(.duration)
+                            let durationInSeconds = CMTimeGetSeconds(duration)
+                            
+                            let fileSize = file.size?.doubleValue ?? 0
+                            let fileName = file.name ?? "Unknown"
+                            
+                            return AudioFile(
+                                name: fileName,
+                                artistName: fileName,
+                                sizeInMB: fileSize / (1024 * 1024),
+                                durationInSeconds: durationInSeconds,
+                                downloadPath: webContentLink,
+                                playbackUrl: webContentLink,
+                                source: .googleDrive
+                            )
+                        } catch {
+                            print("Ошибка при обработке \(file.name ?? "Unknown"): \(error)")
+                            return nil
                         }
-                        
-                        let token = try await self.getAccessToken()
-                        let headers = ["Authorization": "Bearer \(token)"]
-                        let options = ["AVURLAssetHTTPHeaderFieldsKey": headers]
-                        
-                        let asset = AVURLAsset(url: url, options: options)
-                        let duration = try await asset.load(.duration)
-                        let durationInSeconds = CMTimeGetSeconds(duration)
-                        
-                        let fileSize = file.size?.doubleValue ?? 0
-                        let fileName = file.name ?? "Unknown"
-                        
-                        return AudioFile(
-                            name: fileName,
-                            artistName: fileName,
-                            sizeInMB: fileSize / (1024 * 1024),
-                            durationInSeconds: durationInSeconds,
-                            downloadPath: webContentLink,
-                            playbackUrl: webContentLink,
-                            source: .googleDrive
-                        )
-                    } catch {
-                        print("Ошибка при обработке \(file.name ?? "Unknown"): \(error)")
-                        return nil
                     }
                 }
             }

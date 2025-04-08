@@ -14,9 +14,9 @@ protocol NewPlaylistBusinessLogic {
     func loadPickedPlaylistImage(_ request: NewPlaylistModel.PlaylistImage.Request)
     func loadPlaylistName(_ request: NewPlaylistModel.PlaylistName.Request)
     
+    func savePlaylist()
     func loadTrackPicker()
     func loadImagePicker()
-    func savePlaylist()
 }
 
 protocol NewPlaylistDataStore {
@@ -37,5 +37,5 @@ protocol NewPlaylistPresentationLogic {
 }
 
 protocol NewPlaylistWorkerProtocol {
-    
+    func savePlaylistToCoreData(playlist: Playlist)
 }

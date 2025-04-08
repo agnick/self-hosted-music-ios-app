@@ -8,8 +8,11 @@
 import UIKit
 
 protocol PlaylistsBusinessLogic {
-    func loadStart(_ request: PlaylistsModel.Start.Request)
     func createPlaylist()
+    func fetchAllPlaylists()
+    func loadSortOptions()
+    func sortPlaylists(_ request: PlaylistsModel.Sort.Request)
+    func searchPlaylists(_ request: PlaylistsModel.Search.Request)
 }
 
 protocol PlaylistsDataStore {
@@ -17,7 +20,8 @@ protocol PlaylistsDataStore {
 }
 
 protocol PlaylistsPresentationLogic {
-    func presentStart(_ response: PlaylistsModel.Start.Response)
+    func presentAllPlaylists()
+    func presentSortOptions()
     
     func routeTo(vc: UIViewController)
 }

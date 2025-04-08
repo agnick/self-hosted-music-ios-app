@@ -24,28 +24,6 @@ enum AddToPlaylistModel {
         }
     }
     
-    enum CellData {
-        struct Request {
-            let index: Int
-        }
-        
-        struct Response {
-            let index: Int
-            let isEditingMode: Bool
-            let isSelected: Bool
-            let audioFile: AudioFile
-        }
-        
-        struct ViewModel {
-            let index: Int
-            let isEditingMode: Bool
-            let isSelected: Bool
-            let name: String
-            let artistName: String
-            let durationInSeconds: Double?
-        }
-    }
-    
     enum TrackSelection {
         struct Request {
             let index: Int

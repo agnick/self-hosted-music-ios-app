@@ -12,7 +12,7 @@ final class PlayerPresenter: PlayerPresentationLogic {
     
     func presentStart(_ request: PlayerModel.Start.Response) {
         DispatchQueue.main.async {
-            self.view?.displayStart(PlayerModel.Start.ViewModel(trackName: request.currentTrack.name, artistName: request.currentTrack.artistName, trackDuration: request.currentTrack.durationInSeconds))
+            self.view?.displayStart(PlayerModel.Start.ViewModel(trackName: request.currentTrack.name, artistName: request.currentTrack.artistName, trackDuration: request.currentTrack.durationInSeconds, currentTime: request.currentTime))
         }
     }
     
