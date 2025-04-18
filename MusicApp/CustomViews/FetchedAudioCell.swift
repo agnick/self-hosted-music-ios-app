@@ -122,7 +122,7 @@ final class FetchedAudioCell: UITableViewCell {
                 audioSourceLabel?.text = "Источник: \(unwrappedSource.rawValue)"
             } else {
                 audioSourceLabel?.isHidden = false
-                audioSourceLabel?.text = "Источник: скаченные"
+                audioSourceLabel?.text = "Источник: скачанные"
             }
         } else {
             audioSourceLabel?.isHidden = true

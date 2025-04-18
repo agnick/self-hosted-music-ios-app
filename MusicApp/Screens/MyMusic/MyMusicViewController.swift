@@ -546,7 +546,7 @@ final class MyMusicViewController: UIViewController {
     private func setSegmets(cloudServiceName: String) {
         segmentedControl.removeAllSegments()
         segmentedControl.insertSegment(withTitle: cloudServiceName, at: Constants.defaultSegment, animated: false)
-        segmentedControl.insertSegment(withTitle: "Скаченные", at: Constants.secondarySegment, animated: false)
+        segmentedControl.insertSegment(withTitle: "Скачанные", at: Constants.secondarySegment, animated: false)
         
         if lastSelectedSegment < segmentedControl.numberOfSegments {
             segmentedControl.selectedSegmentIndex = lastSelectedSegment

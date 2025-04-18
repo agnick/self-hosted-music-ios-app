@@ -79,7 +79,7 @@ final class PlaylistEditAudioCell: UITableViewCell {
         audioImg.image = img
         audioNameLabel.text = audioName
         artistNameLabel.text = artistName
-        audioSourceLabel.text = "Источник: \(source?.rawValue ?? "скаченные")"
+        audioSourceLabel.text = "Источник: \(source?.rawValue ?? "скачанные")"
         
         audioDuration.text = formatDuration(duration) ?? ""
     }

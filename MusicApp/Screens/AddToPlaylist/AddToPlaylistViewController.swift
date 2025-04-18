@@ -58,7 +58,7 @@ final class AddToPlaylistViewController: UIViewController {
             case .cloud:
                 return "Облачные треки"
             case .downloaded:
-                return "Скаченные треки"
+                return "Скачанные треки"
             }
         }
     }
